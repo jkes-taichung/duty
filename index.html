@@ -845,16 +845,21 @@
   </div>
 </div>
 
-  <script>
+ <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<script>
     const FB_BASE_URL = 'https://duty-15f2b-default-rtdb.firebaseio.com';
-    
-    //  自動抓取今天的年份與月份
-const initDate = new Date();
-let currentYear = initDate.getFullYear();
-let currentMonth = initDate.getMonth(); // 💡 抓出來自動是 0~11，完全符合你原本的設計邏輯
+    // 💡 填入你專屬的 Google OAuth 用戶端 ID
+    const GOOGLE_CLIENT_ID = '910541370606-lgqpiu012f5o7196bk6gcuh04ad9ek5o.apps.googleusercontent.com';
+    let tokenClient;
+
+    // 自動抓取今天的年份與月份
+    const initDate = new Date();
+    let currentYear = initDate.getFullYear();
+    let currentMonth = initDate.getMonth(); 
     let loggedInUser = null; 
     let allUsers = {};
-    let currentMonthDuties = {}; // 全域值勤資料物件
+    let currentMonthDuties = {}; 
     let selectedDateStr = "";
     let selectedAdminDept = "教務處";
     
@@ -882,6 +887,19 @@ let currentMonth = initDate.getMonth(); // 💡 抓出來自動是 0~11，完全
         closeModal('customConfirmModal');
         if (confirmResolver) confirmResolver(false);
       };
+
+      // 💡 初始化 Google OAuth 驗證器
+      if (typeof google !== 'undefined' && google.accounts) {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'https://www.googleapis.com/auth/calendar.events',
+          callback: (tokenResponse) => {
+            if (tokenResponse && tokenResponse.access_token) {
+              executeCalendarSync(tokenResponse.access_token);
+            }
+          },
+        });
+      }
     };
 
     function showCustomConfirm(message) {
@@ -892,11 +910,10 @@ let currentMonth = initDate.getMonth(); // 💡 抓出來自動是 0~11，完全
       });
     }
 
-    // 呼叫自製提示彈窗
     function showCustomMessage(message) {
       document.getElementById('modalMessageContent').innerText = message;
       document.getElementById('messageModal').style.display = 'flex';
-      }
+    }
 
     async function fetchAllUsers() {
       try {
@@ -905,7 +922,6 @@ let currentMonth = initDate.getMonth(); // 💡 抓出來自動是 0~11，完全
       } catch(e) { console.error("無法取得使用者資料", e); }
     }
 
-    // 關鍵：從資料庫抓取最新的值勤表到全域變數 currentMonthDuties
     async function fetchMonthDuties() {
       try {
         let res = await fetch(`${FB_BASE_URL}/duties.json`);
@@ -913,8 +929,8 @@ let currentMonth = initDate.getMonth(); // 💡 抓出來自動是 0~11，完全
       } catch(e) { console.error("無法取得排程資料", e); }
     }
 
- async function renderCalendar() {
-      await fetchMonthDuties(); // 每次渲染日曆前都先抓最新資料
+    async function renderCalendar() {
+      await fetchMonthDuties(); 
       document.getElementById('monthTitle').innerText = `${currentYear}年${currentMonth + 1}月`;
       const grid = document.getElementById('calendarGrid');
       grid.innerHTML = '';
@@ -958,12 +974,9 @@ let currentMonth = initDate.getMonth(); // 💡 抓出來自動是 0~11，完全
           let card = document.createElement('div');
           card.className = 'duty-card';
           
-          // 💡 修正核心：強制透過 window.loggedInUser 讀取全域變數，確保抓到最新的「曾建雄」
           const highlightName = (text) => {
             const currentUser = window.loggedInUser || loggedInUser; 
             if (!currentUser || !currentUser.name || !text) return text || '';
-            
-            // 如果字串包含登入者姓名，就進行變紅取代
             if (text.includes(currentUser.name)) {
               return text.replace(currentUser.name, `<span style="color: #ff5252; font-weight: bold;">${currentUser.name}</span>`);
             }
@@ -971,8 +984,7 @@ let currentMonth = initDate.getMonth(); // 💡 抓出來自動是 0~11，完全
           };
           
           let titleText = d.all ? `${d.all}(${d.adminTitle || ''})` : '值勤人員';
-          card.innerHTML = `<div class="duty-card-title"><span class="material-symbols-outlined" style="font-size: 16px; color: white; font-weight: bold; vertical-align: middle; margin-right: -3px; margin-left: -3px;">emoji_people</span>${highlightName(titleText)}</div>`;
-        
+          card.innerHTML = `<div class="duty-card-title"><span class="material-symbols-outlined" style="font-size: 16px; color: white; font-weight: bold; vertical-align: middle; margin-right: -3px; margin-left: -3px;">emoji_people</span>${highlightName(titleText)}</div>`;       
           let supervisorText = d.director ? `${d.director}(${d.directorTitle || ''})` : '';
           card.innerHTML += `<div class="duty-detail-line">主管: ${highlightName(supervisorText)}</div>`;
           card.innerHTML += `<div class="duty-detail-line">教務處: ${highlightName(d.academic || '')}</div>`;
@@ -1000,49 +1012,43 @@ let currentMonth = initDate.getMonth(); // 💡 抓出來自動是 0~11，完全
       renderCalendar();
     }
 
-function updateTodayHeaderDuty() {
-  const today = new Date();
-  let dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  let headerBox = document.getElementById('todayDutyInfo');
-  
-  if(!headerBox) return;
-
-  fetch(`${FB_BASE_URL}/duties/${dateStr}.json`).then(r => r.json()).then(d => {
-    if (d && d.all) {
-      // 替換核心：使用 material-symbols-outlined 輸出 emoji_people 並鎖定顏色與大小
-      headerBox.innerHTML = `<span class="material-symbols-outlined" style="font-size: 26px; color: #1a4a75; font-weight: bold; vertical-align: middle;">emoji_people</span>今日值勤: ${d.all}`;
-      headerBox.style.display = 'flex';
-    } else {
-      headerBox.style.display = 'none';
+    function updateTodayHeaderDuty() {
+      const today = new Date();
+      let dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+      let headerBox = document.getElementById('todayDutyInfo'); 
+      if(!headerBox) return;
+      fetch(`${FB_BASE_URL}/duties/${dateStr}.json`).then(r => r.json()).then(d => {
+        if (d && d.all) {
+          headerBox.innerHTML = `<span class="material-symbols-outlined" style="font-size: 26px; color: #1a4a75; font-weight: bold; vertical-align: middle;">emoji_people</span>今日值勤: ${d.all}`;
+          headerBox.style.display = 'flex';
+        } else {
+          headerBox.style.display = 'none';
+        }
+      }).catch(() => { headerBox.style.display = 'none'; });
     }
-  }).catch(() => { headerBox.style.display = 'none'; });
-}
 
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     function openLoginModal() { openModal('loginModal'); }
 
     function updateHeaderUI() {
-  const authBlock = document.getElementById('headerAuthBlock');
-  if (!authBlock) return;
+      const authBlock = document.getElementById('headerAuthBlock');
+      if (!authBlock) return;
 
-  // 只負責更新右側的「登入/登出」狀態，不干涉中間的今日值勤元件
-  if (loggedInUser) {
-    authBlock.innerHTML = `
-      <div class="btn-logout-container">
-        <span class="user-info-text">${loggedInUser.name}</span>
-        <button class="btn-logout" onclick="handleLogout()">登出</button>
-      </div>
-    `;
-  } else {
-    authBlock.innerHTML = `
-      <button id="loginHeaderBtn" class="btn-login" onclick="openLoginModal()">登入</button>
-    `;
-  }
-  
-  // 依然在最後呼叫這個函數，它會單獨去抓 Firebase 並顯示在中間的 #todayDutyInfo 上
-  updateTodayHeaderDuty();
-}
+      if (loggedInUser) {
+        authBlock.innerHTML = `
+          <div class="btn-logout-container">
+            <span class="user-info-text">${loggedInUser.name}</span>
+            <button class="btn-logout" onclick="handleLogout()">登出</button>
+          </div>
+        `;
+      } else {
+        authBlock.innerHTML = `
+          <button id="loginHeaderBtn" class="btn-login" onclick="openLoginModal()">登入</button>
+        `;
+      }
+      updateTodayHeaderDuty();
+    }
 
     function handleLogin() {
       let acc = document.getElementById('loginAccount').value.trim();
@@ -1053,16 +1059,11 @@ function updateTodayHeaderDuty() {
         loggedInUser = found;
         closeModal('loginModal');
         updateHeaderUI();
-        
-        // 1. 先執行個人報表（就算它裡面偷偷把月份改掉也沒關係了）
         renderPersonalReport();
         
-        // 💡 2. 核心新增：在畫日曆前，重新強制校正回「當前真實月份」！
         const resetDate = new Date();
         currentYear = resetDate.getFullYear();
         currentMonth = resetDate.getMonth();
-
-        // 3. 最後安穩地渲染當月日曆
         renderCalendar();
       } else { showCustomMessage('無此帳號，請重新輸入！如有問題，請洽資訊組#116'); }
     }
@@ -1078,15 +1079,11 @@ function updateTodayHeaderDuty() {
       }
     }
 
-    // 修改原本的 onDateClick 函數
     function onDateClick(dateStr) {
-      // 如果尚未登入，改為顯示「唯讀視窗」而不是直接跳警告
       if (!loggedInUser) {
         showReadOnlyDuty(dateStr);
         return;
       }
-
-      // 以下為原本登入後的編輯邏輯保持不變...
       selectedDateStr = dateStr;
       document.getElementById('modalTargetDate').innerText = dateStr.replace(/-/g, '/');
       
@@ -1102,41 +1099,31 @@ function updateTodayHeaderDuty() {
       else if (d.general) selectedAdminDept = '總務處';
       else if (d.counseling) selectedAdminDept = '輔導室';
       else selectedAdminDept = '教務處';
-
-      document.getElementById('inputAdminUser').value = d.all || '';
-      document.getElementById('inputSuperUser').value = d.director || '';
       
+      document.getElementById('inputAdminUser').value = d.all || '';
+      document.getElementById('inputSuperUser').value = d.director || '';      
       let officeVal = '';
       if (loggedInUser.activeDept === '教務處') officeVal = d.academic || '';
       if (loggedInUser.activeDept === '學務處') officeVal = d.student || '';
       if (loggedInUser.activeDept === '總務處') officeVal = d.general || '';
       if (loggedInUser.activeDept === '輔導室') officeVal = d.counseling || '';
       document.getElementById('inputOfficeUser').value = officeVal;
-
       previousInputs.inputAdminUser = d.all || '';
       previousInputs.inputSuperUser = d.director || '';
       previousInputs.inputOfficeUser = officeVal;
-
       setupDutyFormUI();
       openModal('dutyModal');
     }
 
-    // 新增：顯示未登入時的唯讀資訊
     function showReadOnlyDuty(dateStr) {
-      let d = currentMonthDuties[dateStr] || {};
-      
-      // 更新標題日期
-      document.getElementById('roDateTitle').innerText = dateStr;
-      
-      // 填入各處室資料，如果沒有資料則顯示「無」
+      let d = currentMonthDuties[dateStr] || {};     
+      document.getElementById('roDateTitle').innerText = dateStr;     
       document.getElementById('roAdmin').innerText = d.all || '無';
       document.getElementById('roSuper').innerText = d.director || '無';
       document.getElementById('roAcademic').innerText = d.academic || '無';
       document.getElementById('roStudent').innerText = d.student || '無';
       document.getElementById('roGeneral').innerText = d.general || '無';
-      document.getElementById('roCounseling').innerText = d.counseling || '無';
-      
-      // 打開唯讀視窗
+      document.getElementById('roCounseling').innerText = d.counseling || '無';     
       openModal('readOnlyDutyModal');
     }
 
@@ -1160,15 +1147,13 @@ function updateTodayHeaderDuty() {
 
     async function setInputValueWithConfirm(inputId, radioName, newVal) {
       let currentVal = document.getElementById(inputId).value.trim();
-      
       if (currentVal && currentVal !== newVal) {
         let isConfirm = await showCustomConfirm(`此欄位已被 ${currentVal} 填入，你確定要取代此人？`);
         if (!isConfirm) {
           syncRadioState(inputId, radioName, currentVal);
           return; 
         }
-      }
-      
+      }      
       document.getElementById(inputId).value = newVal;
       previousInputs[inputId] = newVal;
       syncRadioState(inputId, radioName, newVal);
@@ -1240,9 +1225,7 @@ function updateTodayHeaderDuty() {
         let userDept = (new Date(selectedDateStr).getMonth() === 7) ? u.office8 : u.dept;
         return userDept === deptName && u.level == 1;
       });
-
       sortUsersByTitle(filtered, selectedDateStr);
-
       filtered.forEach(u => {
         let userTitle = (new Date(selectedDateStr).getMonth() === 7) ? u.title8 : u.title;
         let isChecked = (currentVal === u.name) ? 'checked' : '';
@@ -1257,32 +1240,28 @@ function updateTodayHeaderDuty() {
       container.innerHTML += `<label class="checkbox-item text-red"><input type="radio" name="adminUserRadio" value="" ${noneChecked} onclick="setInputValueWithConfirm('inputAdminUser', 'adminUserRadio', '')"> (無)</label>`;
     }
 
- function renderSupervisorOptions() {
-  let container = document.getElementById('supervisorUserList');
-  container.innerHTML = '';
-  let currentVal = document.getElementById('inputSuperUser').value.trim();
-  
-  let filtered = Object.values(allUsers).filter(u => u.level == 2 || u.level == 3);
-  sortUsersByTitle(filtered, selectedDateStr);
+    function renderSupervisorOptions() {
+      let container = document.getElementById('supervisorUserList');
+      container.innerHTML = '';
+      let currentVal = document.getElementById('inputSuperUser').value.trim();
+      
+      let filtered = Object.values(allUsers).filter(u => u.level == 2 || u.level == 3);
+      sortUsersByTitle(filtered, selectedDateStr);
 
-  filtered.forEach(u => {
-    let userTitle = (selectedDateStr.split('-')[1] === '08') ? u.title8 : u.title;
-    
-    // 🌟 修正核心：如果 userTitle 是空字串、null 或 undefined，則直接跳過此人，不顯示在畫面上
-    if (!userTitle) return; 
+      filtered.forEach(u => {
+        let userTitle = (selectedDateStr.split('-')[1] === '08') ? u.title8 : u.title;
+        if (!userTitle) return; 
 
-    let isChecked = (currentVal === u.name) ? 'checked' : '';
-    container.innerHTML += `
-      <label class="checkbox-item">
-        <input type="radio" name="superUserRadio" value="${u.name}" data-title="${userTitle}" ${isChecked} onclick="setInputValueWithConfirm('inputSuperUser', 'superUserRadio', this.value)">
-        ${u.name}(${userTitle})
-      </label>`;
-  });
-  
-  // 維持原本的「無」選項邏輯
-  let noneChecked = (!filtered.some(u => u.name === currentVal) || !currentVal) ? 'checked' : '';
-  container.innerHTML += `<label class="checkbox-item text-red"><input type="radio" name="superUserRadio" value="" ${noneChecked} onclick="setInputValueWithConfirm('inputSuperUser', 'superUserRadio', '')"> 無</label>`;
-}
+        let isChecked = (currentVal === u.name) ? 'checked' : '';
+        container.innerHTML += `
+          <label class="checkbox-item">
+            <input type="radio" name="superUserRadio" value="${u.name}" data-title="${userTitle}" ${isChecked} onclick="setInputValueWithConfirm('inputSuperUser', 'superUserRadio', this.value)">
+            ${u.name}(${userTitle})
+          </label>`;
+      });  
+      let noneChecked = (!filtered.some(u => u.name === currentVal) || !currentVal) ? 'checked' : '';
+      container.innerHTML += `<label class="checkbox-item text-red"><input type="radio" name="superUserRadio" value="" ${noneChecked} onclick="setInputValueWithConfirm('inputSuperUser', 'superUserRadio', '')"> 無</label>`;
+    }
 
     function renderOfficeOptions() {
       let container = document.getElementById('officeUserList');
@@ -1303,7 +1282,6 @@ function updateTodayHeaderDuty() {
       `;
     }
 
-    // 【修正核心】表單送出後，依序執行更新，確保報表能抓到最新資料
     async function submitDutyForm() {
       let payload = currentMonthDuties[selectedDateStr] || {
         academic: "", adminTitle: "", all: "", counseling: "", director: "", directorTitle: "", general: "", student: ""
@@ -1321,6 +1299,7 @@ function updateTodayHeaderDuty() {
           payload.adminTitle = userObj ? ((new Date(selectedDateStr).getMonth() === 7) ? userObj.title8 : userObj.title) : "";
         }
 
+        // 💡 提醒：這裡維持你原本的邏輯，若指派行政值勤，會重置處室值勤。若未來需保留其他處室，可修改此段。
         payload.academic = ""; payload.student = ""; payload.general = ""; payload.counseling = "";
         if(adminVal) {
           if (selectedAdminDept === '教務處') payload.academic = adminVal;
@@ -1342,36 +1321,29 @@ function updateTodayHeaderDuty() {
           payload.directorTitle = userObj ? ((new Date(selectedDateStr).getMonth() === 7) ? userObj.title8 : userObj.title) : "";
         }
       }
-
       if(loggedInUser.level == 1 || loggedInUser.level == 2) {
         let officeVal = document.getElementById('inputOfficeUser').value.trim();
         let deptKey = 'academic';
         if(loggedInUser.activeDept === '學務處') deptKey = 'student';
         if(loggedInUser.activeDept === '總務處') deptKey = 'general';
-        if(loggedInUser.activeDept === '輔導室') deptKey = 'counseling';
-        
+        if(loggedInUser.activeDept === '輔導室') deptKey = 'counseling';        
         payload[deptKey] = officeVal;
       }
 
-      // 1. 先將資料 PUT 到 Firebase
       await fetch(`${FB_BASE_URL}/duties/${selectedDateStr}.json`, {
         method: 'PUT',
         body: JSON.stringify(payload)
       });
 
       closeModal('dutyModal');
-
-      // 2. 關鍵：使用 await 確保日曆重新 fetch 資料並渲染完成
       await renderCalendar(); 
-
-      // 3. 更新標題今日資訊與報表
       updateHeaderUI();
       if(loggedInUser) {
-        renderPersonalReport(); // 此時全域 currentMonthDuties 已經是 fetchMonthDuties 抓回來的最新版
+        renderPersonalReport(); 
       }
     }
 
-function renderPersonalReport() {
+    function renderPersonalReport() {
       const area = document.getElementById('personalReportArea');
       const listContainer = document.getElementById('reportList');
       if (!loggedInUser) return;
@@ -1407,131 +1379,135 @@ function renderPersonalReport() {
           listContainer.innerHTML += `<div class="report-badge" data-date="${item.date}" data-type="${item.type}">${item.date} ｜ ${item.type}</div>`;
         });
       }
-
-      // 👇 新增這段：透過 Google Apps Script 抓取真實 Gmail 帳號
+      
+      // 💡 移除舊版 GAS 抓信箱邏輯，換成乾淨的前端顯示
       const syncBtn = document.querySelector('.btn-sync');
       if (syncBtn) {
-        // 先顯示讀取中，避免空白等待感
-        syncBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步至我的 Google 行事曆 (讀取帳號中...)`;
-        
-        // 呼叫 GAS 後端取得 Gmail
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(function(gmail) {
-              // 成功抓到信箱時更新按鈕 (如果對方沒授權可能會回傳空白，做個防呆)
-              let displayEmail = gmail ? gmail : "未授權取得信箱";
-              syncBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步至我的 Google 行事曆 (${displayEmail})`;
-            })
-            .withFailureHandler(function(err) {
-              // 發生錯誤時的備用顯示
-              syncBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步至我的 Google 行事曆`;
-              console.error("無法取得 Google 信箱: ", err);
-            })
-            .getGoogleUserEmail(); // 呼叫剛剛在 Code.gs 寫的函式
-        } else {
-          // 本地測試環境備用顯示
-          syncBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步至我的 Google 行事曆 (本地測試)`;
-        }
+        syncBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步至我的 Google 行事曆`;
       }
-      // 👆 新增結束
-
+      
       area.style.display = 'block';
     }
 
-  function syncToCalendar() {
-  let badges = document.querySelectorAll('.report-badge');
-  let dutyList = [];
-  badges.forEach(b => {
-    let date = b.getAttribute('data-date');
-    let type = b.getAttribute('data-type');
-    if(date && type) dutyList.push({date: date, type: type});
-  });
-  
-  if(dutyList.length === 0) return showCustomMessage('沒有排程可同步！');
-  
-  // 1. 自動偵測點擊的按鈕，並暫存原本的 HTML 內容
-  const syncBtn = document.querySelector('.btn-sync') || (typeof event !== 'undefined' ? event.target : null) || document.activeElement;
-  const originalHTML = syncBtn ? syncBtn.innerHTML : '';
-  
-  // 2. 立即將按鈕禁用 (Disabled) 並顯示同步中
-  if (syncBtn) {
-    syncBtn.disabled = true;
-    // 這裡使用 material-symbols-outlined 的 sync 圖示，並加上 spin-icon 旋轉 CSS
-    syncBtn.innerHTML = `<span class="material-symbols-outlined spin-icon" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步中.....`;
-  }
+    // 💡 綁定 Google OAuth 的全新同步按鈕函數
+    function syncToCalendar() {
+      let badges = document.querySelectorAll('.report-badge');
+      let dutyList = [];
+      badges.forEach(b => {
+        let date = b.getAttribute('data-date');
+        let type = b.getAttribute('data-type');
+        if(date && type) dutyList.push({date: date, type: type});
+      });
+      
+      if(dutyList.length === 0) return showCustomMessage('沒有排程可同步！');
 
-  // 3. 呼叫 Google Apps Script 後端
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
-    google.script.run
-      .withSuccessHandler(function(res) {
-        // 成功時：解除禁用、恢復按鈕文字、彈出提示
-        if (syncBtn) {
-          syncBtn.disabled = false;
-          syncBtn.innerHTML = originalHTML;
-        }
-        showCustomMessage(res.message); 
-      })
-      .withFailureHandler(function(err) {
-        // 💡 關鍵防卡死：萬一 Google API 噴錯，也要把按鈕還給使用者
-        if (syncBtn) {
-          syncBtn.disabled = false;
-          syncBtn.innerHTML = originalHTML;
-        }
-        showCustomMessage("同步失敗，請稍後再試！錯誤訊： " + err.message);
-      })
-      .syncToGoogleCalendar(loggedInUser.account, dutyList);
-  } else {
-    // 網頁本地端測試環境模擬（1.5秒後自動還原）
-    setTimeout(() => {
-      if (syncBtn) {
-        syncBtn.disabled = false;
-        syncBtn.innerHTML = originalHTML;
+      // 暫存要同步的資料到全域，方便 callback 使用
+      window.pendingDutyList = dutyList; 
+
+      // 觸發 Google 登入與授權視窗
+      if (tokenClient) {
+        tokenClient.requestAccessToken();
+      } else {
+        showCustomMessage('Google API 尚未載入完成，請確認網路連線或稍後再試。');
       }
-      showCustomMessage('偵測到本地環境：模擬同步成功！');
-    }, 1500);
-  }
-}
-// 控制密碼顯示與隱藏
-const toggleBtn = document.getElementById('toggleBtn');
-const loginInput = document.getElementById('loginAccount');
+    }
 
-// 1. 滑鼠按下：顯示明碼與張開的眼睛
-toggleBtn.addEventListener('mousedown', function() {
-  loginInput.classList.add('show-text');
-  this.classList.add('visible');
-});
+    // 💡 實際執行寫入 Google 日曆的函數
+    async function executeCalendarSync(accessToken) {
+      const syncBtn = document.querySelector('.btn-sync');
+      const originalHTML = syncBtn ? syncBtn.innerHTML : '';
+      
+      if (syncBtn) {
+        syncBtn.disabled = true;
+        syncBtn.innerHTML = `<span class="material-symbols-outlined spin-icon" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步中.....`;
+      }
 
-// 2. 滑鼠放開：恢復暗碼與閉上的眼睛
-toggleBtn.addEventListener('mouseup', function() {
-  loginInput.classList.remove('show-text');
-  this.classList.remove('visible');
-});
+      const dutyList = window.pendingDutyList || [];
+      let successCount = 0;
+      let failCount = 0;
 
-// 3. 防呆機制：如果滑鼠按住後，游標拖移離開了按鈕才放開，也要恢復暗碼
-toggleBtn.addEventListener('mouseleave', function() {
-  loginInput.classList.remove('show-text');
-  this.classList.remove('visible');
-});
+      try {
+        await Promise.all(dutyList.map(async (duty) => {
+          const startDate = new Date(duty.date);
+          const endDate = new Date(startDate);
+          endDate.setDate(startDate.getDate() + 1); 
+          
+          const startStr = startDate.toISOString().split('T')[0];
+          const endStr = endDate.toISOString().split('T')[0];
 
-// 4. 手機版觸控支援：手指按住顯示
-toggleBtn.addEventListener('touchstart', function(e) {
-  e.preventDefault(); // 防止手機瀏覽器觸發預設的反白或選單
-  loginInput.classList.add('show-text');
-  this.classList.add('visible');
-});
+          const eventBody = {
+            summary: `🏫 學校值勤: ${duty.type}`,
+            description: '由行政值勤系統自動同步',
+            start: { date: startStr },
+            end: { date: endStr }
+          };
 
-// 5. 手機版觸控支援：手指放開隱藏
-toggleBtn.addEventListener('touchend', function() {
-  loginInput.classList.remove('show-text');
-  this.classList.remove('visible');
-});
+          const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(eventBody)
+          });
 
-// 讓使用者在輸入框按下 Enter 也能直接登入
-loginInput.addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') {
-    handleLogin();
-  }
-});
+          if (response.ok) {
+            successCount++;
+          } else {
+            failCount++;
+            console.error('寫入單筆事件失敗', await response.text());
+          }
+        }));
+
+        showCustomMessage(`同步完成！成功寫入 ${successCount} 筆，失敗 ${failCount} 筆。請檢查您的 Google 日曆。`);
+
+      } catch (error) {
+        console.error('同步過程發生錯誤:', error);
+        showCustomMessage("同步失敗，請稍後再試！錯誤訊息請見控制台。");
+      } finally {
+        if (syncBtn) {
+          syncBtn.disabled = false;
+          syncBtn.innerHTML = originalHTML;
+        }
+      }
+    }
+
+    // 控制密碼顯示與隱藏
+    const toggleBtn = document.getElementById('toggleBtn');
+    const loginInput = document.getElementById('loginAccount');
+
+    toggleBtn.addEventListener('mousedown', function() {
+      loginInput.classList.add('show-text');
+      this.classList.add('visible');
+    });
+
+    toggleBtn.addEventListener('mouseup', function() {
+      loginInput.classList.remove('show-text');
+      this.classList.remove('visible');
+    });
+
+    toggleBtn.addEventListener('mouseleave', function() {
+      loginInput.classList.remove('show-text');
+      this.classList.remove('visible');
+    });
+
+    // 手機版觸控支援
+    toggleBtn.addEventListener('touchstart', function(e) {
+      loginInput.classList.add('show-text');
+      this.classList.add('visible');
+    });
+
+    toggleBtn.addEventListener('touchend', function() {
+      loginInput.classList.remove('show-text');
+      this.classList.remove('visible');
+    });
+
+    // 讓使用者在輸入框按下 Enter 也能直接登入
+    loginInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        handleLogin();
+      }
+    });
 </script>
 </body>
 </html>
