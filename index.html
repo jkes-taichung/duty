@@ -1413,6 +1413,7 @@
     }
 
     // 💡 實際執行寫入 Google 日曆的函數
+   // 💡 實際執行寫入 Google 日曆的函數（已加入下午 7:00 提醒功能）
     async function executeCalendarSync(accessToken) {
       const syncBtn = document.querySelector('.btn-sync');
       const originalHTML = syncBtn ? syncBtn.innerHTML : '';
@@ -1435,11 +1436,21 @@
           const startStr = startDate.toISOString().split('T')[0];
           const endStr = endDate.toISOString().split('T')[0];
 
+          // 核心修改處：加入 reminders 覆寫預設提醒
           const eventBody = {
             summary: `🏫 學校值勤: ${duty.type}`,
             description: '由行政值勤系統自動同步',
             start: { date: startStr },
-            end: { date: endStr }
+            end: { date: endStr },
+            reminders: {
+              useDefault: false, // 💡 停用 Google 的預設提醒時間
+              overrides: [
+                { 
+                  method: 'popup', 
+                  minutes: 300 // 💡 300 分鐘 = 5 小時。從值勤當天 00:00 往前推 5 小時，即為「前一天下午 7:00」
+                }
+              ]
+            }
           };
 
           const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
@@ -1471,7 +1482,6 @@
         }
       }
     }
-
     // 控制密碼顯示與隱藏
     const toggleBtn = document.getElementById('toggleBtn');
     const loginInput = document.getElementById('loginAccount');
