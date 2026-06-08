@@ -1413,7 +1413,7 @@
     }
 
     // 💡 實際執行寫入 Google 日曆的函數
-   // 💡 實際執行寫入 Google 日曆的函數（已加入下午 7:00 提醒功能）
+ // 💡 實際執行寫入 Google 日曆的函數（已加入「防重複檢查」與「下午 7:00 提醒」）
     async function executeCalendarSync(accessToken) {
       const syncBtn = document.querySelector('.btn-sync');
       const originalHTML = syncBtn ? syncBtn.innerHTML : '';
@@ -1425,30 +1425,48 @@
 
       const dutyList = window.pendingDutyList || [];
       let successCount = 0;
+      let skipCount = 0; // 💡 用來統計重複跳過的筆數
       let failCount = 0;
 
       try {
         await Promise.all(dutyList.map(async (duty) => {
+          const eventTitle = `🏫 學校值勤: ${duty.type}`;
           const startDate = new Date(duty.date);
           const endDate = new Date(startDate);
           endDate.setDate(startDate.getDate() + 1); 
           
+          // 將日期轉換為 ISO 格式以供查詢
+          const timeMin = startDate.toISOString();
+          const timeMax = endDate.toISOString();
           const startStr = startDate.toISOString().split('T')[0];
           const endStr = endDate.toISOString().split('T')[0];
 
-          // 核心修改處：加入 reminders 覆寫預設提醒
+          // --- 🔍 步驟 1：防重複檢查 ---
+          // 查詢該時段內是否有相同標題的行程
+          const searchUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&q=${encodeURIComponent(eventTitle)}`;
+          const searchResponse = await fetch(searchUrl, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          });
+          const searchData = await searchResponse.json();
+          
+          // 檢查回傳的項目中，標題是否完全吻合
+          const isDuplicate = searchData.items && searchData.items.some(item => item.summary === eventTitle);
+
+          if (isDuplicate) {
+            skipCount++; // 發現重複，記錄下來並跳過
+            return; 
+          }
+
+          // --- ✍️ 步驟 2：執行寫入 (如果沒有重複) ---
           const eventBody = {
-            summary: `🏫 學校值勤: ${duty.type}`,
+            summary: eventTitle,
             description: '由行政值勤系統自動同步',
             start: { date: startStr },
             end: { date: endStr },
             reminders: {
-              useDefault: false, // 💡 停用 Google 的預設提醒時間
+              useDefault: false,
               overrides: [
-                { 
-                  method: 'popup', 
-                  minutes: 300 // 💡 300 分鐘 = 5 小時。從值勤當天 00:00 往前推 5 小時，即為「前一天下午 7:00」
-                }
+                { method: 'popup', minutes: 300 } // 前一天下午 7:00 提醒
               ]
             }
           };
@@ -1466,15 +1484,18 @@
             successCount++;
           } else {
             failCount++;
-            console.error('寫入單筆事件失敗', await response.text());
           }
         }));
 
-        showCustomMessage(`同步完成！成功寫入 ${successCount} 筆，失敗 ${failCount} 筆。請檢查您的 Google 日曆。`);
+        // 修改提示訊息，讓使用者知道有多少筆是重複而略過的
+        let finalMsg = `同步處理完成！\n✅ 新增：${successCount} 筆\n⏭️ 跳過(重複)：${skipCount} 筆`;
+        if (failCount > 0) finalMsg += `\n❌ 失敗：${failCount} 筆`;
+        
+        showCustomMessage(finalMsg);
 
       } catch (error) {
         console.error('同步過程發生錯誤:', error);
-        showCustomMessage("同步失敗，請稍後再試！錯誤訊息請見控制台。");
+        showCustomMessage("同步失敗，請稍後再試！");
       } finally {
         if (syncBtn) {
           syncBtn.disabled = false;
