@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-blue: #1a4a75;
+      --secondary-blue: #1a73e8;
+      --light-bg: #f8f9fa;
+      --yellow-today: #fec107;
+      --border-color: #dee2e6;
+    }
+    * { box-sizing: border-box; font-family: 'Noto Sans TC', sans-serif; margin: 0; padding: 0; }
+    body { background-color: #f4f6f9; color: #333; padding-bottom: 50px; }
+
+
+.today-btn:hover {
+  background-color: #ffcc00 !important; /* 變成更明亮的黃色 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* 加上淡淡的立體陰影 */
+  cursor: pointer;
+}    
+/* 輸入框本體與 CSS 暗碼遮罩 */
+.mask-input {
+  flex-grow: 1;
+  border: none;
+  outline: none;
+  padding: 12px 0;
+  font-size: 20px;
+  text-align: center;
+  letter-spacing: 2px;
+  color: #333;
+  background: transparent;
+  
+  /* 關鍵 1：用 CSS 將純文字變成黑點 (暗碼) */
+  -webkit-text-security: disc; 
+}
+
+/* 關鍵 2：當加入這個 class 時，解除 CSS 遮罩，顯示明碼 */
+.mask-input.show-text {
+  -webkit-text-security: none;
+}
+
+.mask-input::placeholder {
+  font-size: 16px;
+  letter-spacing: normal;
+  color: #aaa;
+}
+
+/* 控制兩張圖的顯示與隱藏 (依據您的程式碼) */
+.toggle-password .eye-open { display: none; }
+.toggle-password .eye-close { display: block; }
+
+/* 當按鈕啟動明碼狀態時 */
+.toggle-password.visible .eye-open { display: block; } 
+.toggle-password.visible .eye-close { display: none; }
+
+
+
+    /* 頂部導覽列 */
+   /* 1. 外層背景：只負責藍色背景與高度，不負責排版 */
+.header-bar {
+  background-color: #1a4a75; /* 你的主藍色 */
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  width: 100%;
+  height: 80px;
+}
+
+/* 2. 內層容器：關鍵！複製日曆的對齊邏輯，限制最大寬度並水平置中 */
+.header-container {
+  max-width: 1200px;        /* 限制跟下方日曆一樣的最大寬度 */
+  margin: 0 auto;           /* 讓內容在畫面上水平置中 */
+  padding: 12px 20px;       /* 左右 padding（20px）必須跟日曆容器一模一樣 */
+  height: 80px;
+  /* 關鍵：讓三個子元件（左、中、右）平均分配空間，自動達成中間置中 */
+  display: flex;
+  justify-content: space-between; /* 讓左、中、右散開對齊兩端 */
+  align-items: center;      /* 垂直置中 */
+  
+  /* 增加底部陰影增加立體感 */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 調整左側標題區塊 */
+.header-title { 
+  display: flex; 
+  align-items: center; 
+  gap: 14px;                 /* 稍微拉開加大後的圖示與文字間距 */
+  font-size: 36px;           /* ⚠️ 文字放大 50% (原 24px * 1.5 = 36px) */
+  font-weight: bold;         /* ⚠️ 文字加粗 */
+}
+
+/* ⚠️ 讓 id_card 圖示加大 1 倍 */
+.header-title .material-symbols-outlined {
+  font-size: 60px;           /* 圖示加大一倍 (預設 24px * 2 = 48px) */
+}
+
+.header-right { 
+  display: flex; 
+  align-items: center; 
+  gap: 15px; 
+}
+    
+    /* 登入與登出按鈕樣式 */
+ /* 登入按鈕樣式 */
+.btn-login {
+  background-color: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white; 
+  padding: 8px 22px;          /* 稍微加大按鈕內距，配合變大的字體 */
+  border-radius: 4px; 
+  cursor: pointer; 
+  transition: 0.3s;
+  font-size: 16px;            /* ⚠️ 文字放大 30% (約 16px * 1.3 = 20.8px) */
+  font-weight: 500;           /* 微加粗讓大字更好看 */
+}
+.btn-login:hover { background-color: rgba(255,255,255,0.3); }
+    .btn-logout-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background-color: rgba(255,255,255,0.15);
+      padding: 4px 12px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .user-info-text { font-size: 14px; color: #e8f0fe; }
+    .btn-logout {
+      background-color: #d93025;
+      color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: 0.2s;
+    }
+    .btn-logout:hover { background-color: #b52218; }
+    
+    .duty-status-badge { 
+  background-color: #e8f4fe; /* 淺藍色背景 */
+  color: #1a4a75;            /* 深藍色文字 */
+  padding: 10px 24px;        /* 上下 10px，左右 24px 讓膠囊更寬敞 */
+  border-radius: 24px;       /* 完美圓角膠囊狀 */
+  font-size: 18px;           /* 放大字體 */
+  font-weight: bold;         /* 加粗文字 */
+  display: flex; 
+  align-items: center; 
+  gap: 8px;                  /* 圖標與文字的間距 */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  margin-right: auto;        /* 讓右邊自動填滿空白，把方塊推向左邊 */
+  margin-left: 150px;         /* 控制方塊與左邊「行政值勤系統」文字的精準間距，可隨意調整數字 */
+}
+
+    /* 日曆主容器 */
+    .calendar-container { max-width: 1200px; margin: 30px auto; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; }
+    .calendar-nav { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 20px; }
+    .nav-btn { background: #343a40; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; }
+    .today-btn { background-color: var(--yellow-today); color: #333; font-weight: bold; border: none; width: 40px; height: 40px; border-radius: 4px; cursor: pointer; font-size: 16px; border: 2px solid #212529;   /* 2px 粗細的深黑色實線外框 */ }
+    .month-display { font-size: 20px; font-weight: bold; }
+
+    /* 日曆網格 */
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid var(--border-color); border-left: 1px solid var(--border-color); }
+    .calendar-day-header { background-color: #f8f9fa; text-align: center; padding: 10px; font-weight: bold; border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+    .calendar-cell { min-height: 120px; padding: 6px; border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); background-color: white; cursor: pointer; transition: 0.2s; }
+    .calendar-cell:hover { background-color: #f1f3f5; }
+    .day-number-box { display: block; width: 24px; height: 24px; text-align: center; line-height: 24px; font-weight: 500; margin: 0 auto 4px auto; }
+    .bg-today { background-color: var(--yellow-today); border-radius: 4px; }
+    
+    /* 值勤卡片樣式 */
+    .duty-card { background-color: var(--primary-blue); color: white; border-radius: 4px; padding: 4px 6px; font-size: 14px; margin-top: 4px; }
+    .duty-card-title { display: flex; align-items: center; gap: 3px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 3px; margin-bottom: 2px; }
+    .duty-detail-line { font-size: 13px; opacity: 0.9; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* 個人報表區塊 */
+    .report-container { max-width: 1200px; margin: 20px auto; background: white; border-radius: 8px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: none; }
+    .report-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
+    .report-list { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+    .report-badge { background-color: #e8f0fe; color: #1a73e8; padding: 6px 12px; border-radius: 20px; font-size: 14px; border: 1px solid #d2e3fc; }
+    .btn-sync { background-color: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    
+    /* 彈跳視窗 Modal 通用 */
+    .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); display:none; justify-content:center; align-items:center; z-index:1000; }
+    .modal-box { background: white; border-radius: 12px; width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .modal-header { font-size: 20px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+    
+    /* 自製確認視窗特定樣式 */
+    .confirm-box { max-width: 400px; text-align: center; padding: 30px 24px; }
+    .confirm-message { font-size: 16px; color: #333; margin-bottom: 24px; line-height: 1.5; font-weight: 500; }
+    .confirm-footer { display: flex; justify-content: center; gap: 15px; }
+    .btn-confirm-yes { background: #1a73e8; color: white; border: none; padding: 10px 24px; border-radius: 20px; cursor: pointer; font-size: 15px; font-weight: 500; transition: 0.2s; }
+    .btn-confirm-yes:hover { background: #155cb4; }
+    .btn-confirm-no { background: #f1f3f5; color: #5f6368; border: 1px solid var(--border-color); padding: 10px 24px; border-radius: 20px; cursor: pointer; font-size: 15px; font-weight: 500; transition: 0.2s; }
+    .btn-confirm-no:hover { background: #e8eaed; }
+
+    /* 表單卡片樣式 */
+    .form-group { margin-bottom: 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 12px; padding: 16px; }
+    .form-group-title { font-weight: bold; font-size: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; color: #333; }
+    .form-group-title span { font-size: 12px; color: #888; }
+    
+    /* 打字輸入方塊 */
+    .form-input-box { width: 100%; padding: 10px 14px; margin-bottom: 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    .form-input-box:focus { border-color: var(--secondary-blue); }
+    
+    /* 膠囊式頁籤 */
+    .dept-tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .dept-tab { background: white; border: 1px solid var(--border-color); padding: 6px 16px; border-radius: 20px; font-size: 13px; cursor: pointer; transition: 0.2s; }
+    .dept-tab.active { background-color: var(--secondary-blue); color: white; border-color: var(--secondary-blue); }
+    
+    /* 人員勾選清單排列 */
+    .checkbox-list { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; padding-top: 4px; }
+    .checkbox-item { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .checkbox-item input { width: 16px; height: 16px; cursor: pointer; }
+    .text-red { color: #f44336; font-weight: 500; }
+    
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .btn-cancel { background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    .btn-submit { background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    
+    /* 按鈕被禁用時的狀態 */
+.btn-sync:disabled {
+  background-color: #9aa0a6; /* 變成灰色 */
+  border-color: #9aa0a6;
+  cursor: not-allowed;       /* 滑鼠游標變成禁止符號 */
+  opacity: 0.8;
+}
+
+/* 讓圖示無限旋轉的動畫 */
+.spin-icon {
+  animation: spin-animation 1.2s linear infinite;
+}
+
+/* --- 專屬登入視窗樣式 --- */
+
+/* 彈窗整體卡片 */
+/* --- 專屬登入視窗樣式與置中修正 --- */
+
+/* --- 專屬登入視窗樣式 --- */
+
+/* 彈窗整體卡片 */
+.modal-box-custom {
+  max-width: 420px; 
+  padding: 30px; 
+  text-align: center;
+  border-radius: 24px; 
+  background: white;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+}
+
+/* Logo 容器與圖片 */
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 15px; 
+}
+.logo-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%; 
+  border: 1px solid #ccc; 
+  object-fit: cover; 
+}
+
+/* 標題文字 */
+.system-title {
+  font-size: 30px; 
+  font-weight: bold;
+  color: #333; 
+  margin-bottom: 20px; 
+}
+
+/* --- 輸入框區塊 (Flexbox 置中核心) --- */
+.input-group-custom {
+  display: flex; 
+  align-items: center; 
+  position: relative; 
+  margin: 0 !important; 
+  height: 54px; 
+  border: 1px solid #e0e0e0; 
+  background-color: #f9f9f9; 
+  border-radius: 27px; 
+  width: 100%; 
+  box-sizing: border-box; 
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.input-group-custom:focus-within {
+  border-color: #1a73e8; 
+  background-color: white; 
+}
+
+/* 輸入框本體 */
+/* 輸入框本體 */
+.mask-input-custom {
+  /* 輸入密碼時的黑點大小，若覺得 34px 太大可改回 24px */
+  font-size: 24px !important; 
+  
+  /* 💡 修正 1：明確指定高度為 54px */
+  height: 54px !important; 
+  
+  /* 💡 修正 2：將行高設定與高度一模一樣 (54px)，這是輸入框垂直置中的必殺技 */
+  line-height: 54px !important; 
+  
+  
+  border: none !important; 
+  background: transparent !important; 
+  border-radius: 27px; 
+  
+  /* 左右對稱 50px 確保可用空間在正中央 */
+  padding: 0 50px !important; 
+  
+  color: #333 !important;
+  width: 100%; 
+  box-sizing: border-box; 
+  outline: none;
+  -webkit-text-security: disc;
+  
+  /* 強制水平置中 */
+  text-align: center !important; 
+
+}
+
+.mask-input-custom.show-text {
+  -webkit-text-security: none;
+  font-size: 20px !important; /* 明碼時的字體大小 */
+}
+
+/* Placeholder 特定樣式 (請輸入學務系統帳號...) */
+.mask-input-custom::placeholder {
+  color: #aaa;
+  
+  /* 💡 修正 3：把這裡的 font-size 改大！(原本被寫死在 16px，所以字才沒變大) */
+  font-size: 20px !important; 
+  
+  /* 💡 修正 4：提示文字也要套用 54px 的行高，確保完美垂直置中 */
+  line-height: 54px !important; 
+  
+  text-align: center !important; 
+}
+
+/* 眼睛按鈕 */
+.toggle-password-custom {
+  position: absolute;
+  right: 18px !important; 
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: #888 !important; 
+  width: 28px !important; 
+  height: 28px !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer;
+  padding: 0 !important;
+  display: flex !important; 
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 控制 SVG 眼睛圖示顯示/隱藏 */
+.toggle-password-custom .eye-open { display: none; }
+.toggle-password-custom .eye-close { display: block; }
+.toggle-password-custom.visible .eye-open { display: block; }
+.toggle-password-custom.visible .eye-close { display: none; }
+
+/* --- 按鈕群組 --- */
+.button-group-custom {
+  display: flex;
+  flex-direction: column; 
+  gap: 12px; 
+  margin-top: 30px; 
+}
+
+.btn-enter {
+  width: 100% !important; 
+  height: 54px; 
+  border-radius: 27px; 
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  border: none;
+  cursor: pointer;
+  background-color: #1a73e8 !important; 
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.btn-enter:hover {
+  background-color: #155cb4 !important; 
+}
+
+.btn-cancel-custom {
+  width: 100% !important; 
+  height: 54px; 
+  border-radius: 27px; 
+  font-size: 18px;
+  font-weight: bold;
+  color: #666; 
+  border: 1px solid #e0e0e0; 
+  background-color: white !important; 
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.btn-cancel-custom:hover {
+  background-color: #f5f5f5 !important; 
+}
+
+/* ==========================================
+   專業版值勤彈窗專用 UI 樣式
+   ========================================== */
+
+/* 1. 遮罩背景：加入輕微模糊（毛玻璃效果），視覺更高級 */
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(15, 23, 42, 0.4); /* 深色透明 */
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px); 
+}
+
+/* 2. 彈窗主體卡片 */
+.pro-modal-card {
+  background: #ffffff;
+  width: 90%;
+  max-width: 440px;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* 3. 標頭設計 */
+.pro-modal-header {
+  background: #f8fafc;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pro-modal-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex; align-items: center; gap: 8px;
+}
+.pro-modal-title .header-icon {
+  color: #1a4a75; /* 配合你原本的深藍主題色 */
+  font-size: 24px;
+}
+.pro-close-x {
+  background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer; transition: color 0.2s;
+}
+.pro-close-x:hover { color: #475569; }
+
+/* 4. 內容佈局 */
+.pro-modal-body {
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+/* 5. 條目網格化：左右對齊、微灰底襯托 */
+.duty-grid-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #cbd5e1;
+}
+
+/* 行政與主管核心職務：特殊色塊凸顯高階感 */
+/* ==========================================
+   調整後：行政與主管值勤顏色格式對調
+   ========================================== */
+
+/* 行政值勤：改為紅系高亮 */
+.admin-highlight {
+  background: #fff5f5;          /* 輕微紅底 */
+  border-left-color: #ff5252;   /* 紅色左邊框 */
+}
+.admin-highlight .duty-label { 
+  color: #ff5252;               /* 紅色文字 */
+  font-weight: 700; 
+}
+
+/* 主管值勤：改為藍系高亮 */
+.super-highlight {
+  background: #f0f7ff;          /* 輕微藍底 */
+  border-left-color: #1a4a75;   /* 深藍左邊框 */
+}
+.super-highlight .duty-label { 
+  color: #1a4a75;               /* 深藍文字 */
+  font-weight: 700; 
+}
+/* 標籤與值 */
+.duty-label {
+  font-weight: 600; color: #475569;
+  display: flex; align-items: center; gap: 6px;
+}
+.duty-label .material-symbols-outlined { font-size: 20px; }
+.duty-value {
+  font-weight: 700; color: #0f172a; font-size: 1.05rem;
+}
+
+/* 分隔線 */
+.duty-divider {
+  height: 1px; background: #e2e8f0; margin: 6px 0;
+}
+
+/* 6. 底部按鈕 */
+.pro-modal-footer {
+  padding: 16px 24px; background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex; justify-content: flex-end;
+}
+.pro-btn-close {
+  background: #64748b; color: white; border: none; 
+  padding: 10px 24px; border-radius: 8px; 
+  font-weight: 600; cursor: pointer; transition: background 0.2s;
+}
+.pro-btn-close:hover { background: #475569; }
+
+/* ==========================================
+   📱 關鍵：手機模式響應式（RWD）
+   ========================================== */
+@media (max-width: 480px) {
+  /* 整體字體大小基礎放大 20% */
+  .pro-modal-card {
+    width: 92%;
+    font-size: 120%; 
+  }
+  
+  /* 標頭與圖示按比例同步放大 */
+  .pro-modal-title { font-size: 1.35rem; }
+  .pro-modal-title .header-icon { font-size: 28px; }
+  
+  /* 增加手機版內距與條目間距，更適合手指點擊與閱讀 */
+  .pro-modal-body { padding: 20px; gap: 14px; }
+  .duty-grid-item { padding: 14px 18px; }
+  .duty-value { font-size: 1.2rem; }
+  
+  /* 手機版按鈕變成直覺的滿版，更好按 */
+  .pro-btn-close { width: 100%; padding: 12px; font-size: 1.1rem; }
+}
+
+@keyframes spin-animation {
+  100% { transform: rotate(360deg); }
+}
+    /* 通用隱藏輸入框 */
+    .input-field { width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 4px; }
+   /* 專屬調整值勤資料彈窗的寬度與高度 (加入捲軸) */
+    #dutyModal .modal-box {
+       max-width: 555px;  
+       width: 90%;        
+       max-height: 98vh;  /* 限制最大高度為螢幕視窗高度的 85% */
+       overflow-y: auto;  /* 當內容超過高度時，自動產生垂直捲軸 */
+    }
+
+/* =========================================
+   手機版 (小螢幕) 響應式調整 
+   ========================================= */
+@media (max-width: 768px) {
+  /* 1. 解除高度鎖死，讓標題列可以隨內容自動長高 */
+  .header-bar, .header-container {
+    height: auto !important;
+    min-height: 60px;
+  }
+  
+  /* 2. 允許內容換行，並調整內距 */
+  .header-container {
+    flex-wrap: wrap; 
+    padding: 10px 15px;
+    justify-content: space-between;
+    gap: 10px; /* 元素上下左右的間距 */
+  }
+
+  /* 3. 縮小標題字體與圖示 */
+  .header-title {
+    font-size: 22px !important;
+    gap: 8px;
+  }
+  .header-title .material-symbols-outlined {
+    font-size: 32px !important;
+  }
+
+  /* 4. 關鍵修復：歸零 margin-left，並讓值勤膠囊獨占一行或縮小 */
+  .duty-status-badge {
+    margin-left: 0 !important; /* 覆蓋掉原本的 150px */
+    margin-right: 0 !important;
+    font-size: 14px !important;
+    padding: 6px 14px !important;
+    order: 3; /* 在手機版將它移到最下方 (標題=1, 按鈕=2, 標籤=3) */
+    width: 100%; /* 讓它自己佔據一整橫列 */
+    justify-content: center; /* 讓裡面的文字置中 */
+  }
+
+  /* 5. 稍微縮小登入按鈕 */
+  .btn-login {
+    font-size: 14px !important;
+    padding: 6px 14px !important;
+  }
+  
+  .header-right {
+    order: 2; /* 讓登入按鈕保持在右上角附近 */
+  }
+  
+  /* =========================================
+     日曆卡片 (值勤藍色方塊) 手機版修正
+     ========================================= */
+  .duty-card {
+    padding: 3px 4px !important;    /* 稍微減少內距，爭取更多文字空間 */
+    font-size: 11px !important;     /* 手機版字體微調縮小 */
+  }
+
+  .duty-card-title {
+    white-space: nowrap !important;      /* 關鍵：強制文字保持在同一行，絕對不換行 */
+    overflow: hidden !important;         /* 隱藏超出格子的部分 */
+    text-overflow: ellipsis !important;  /* 超出的文字自動變成刪節號 (...) */
+    display: block !important;           /* 修正 Flexbox 在某些手機瀏覽器截斷失效的問題 */
+  }
+
+  /* 確保下方的細節文字也維持單行不斷行 */
+  .duty-detail-line {
+    font-size: 10px !important;
+  }
+  
+  /* =========================================
+     彈跳視窗 (Modal) 手機版全螢幕設定
+     ========================================= */
+  .modal-box, #dutyModal .modal-box {
+    width: 100% !important;        /* 寬度佔滿 */
+    height: 100% !important;       /* 高度佔滿 */
+    max-width: none !important;    /* 解除最大寬度限制 */
+    max-height: none !important;   /* 解除最大高度限制 */
+    border-radius: 0 !important;   /* 取消圓角，完美貼齊螢幕邊緣 */
+    padding: 10px !important;      /* 維持舒適的內距 */
+    margin: 0 !important;          /* 移除任何可能的外距 */
+    overflow-y: auto;              /* 內容過多時自動產生捲軸 */
+  }
+
+  /* 確保外層遮罩不會有額外的間距導致無法貼齊 */
+  .modal-overlay {
+    padding: 0 !important;
+  }
+  .dept-tab,
+  #groupAdminDuty button {
+    padding: 6px 2px !important;      /* 大幅縮減左右內距，釋放橫向空間 */
+    margin: 0 !important;             /* 清除預設左右外距，改由父層 gap 統一控制 */
+    font-size: 13.5px !important;     /* 微調手機版字體大小，確保三個字完整顯示 */
+    text-align: center !important;
+    white-space: nowrap !important;   /* 防止按鈕內的文字自己折行 */
+    
+    /* 核心：讓四個按鈕化身彈性元件，自動均分單行空間 */
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    flex: 1 !important;               /* 關鍵：四個按鈕平分 100% 寬度 */
+    min-width: 0 !important;          /* 防撐開破版防線 */
+  }
+
+ 
+}
+
+  </style>
+</head>
+<body>
+
+<div class="header-bar">
+  <div class="header-container">
+    
+    <div class="header-title">
+      <span class="material-symbols-outlined">id_card</span> 行政值勤系統
+    </div>
+    
+    <div id="todayDutyInfo" class="duty-status-badge" style="display:none;"></div>
+    
+    <div class="header-right" id="headerAuthBlock">
+      <button id="loginHeaderBtn" class="btn-login" onclick="openLoginModal()">登入</button>
+    </div>
+
+  </div>
+</div>
+
+
+
+  <div class="calendar-container">
+    <div class="calendar-nav">
+      <button class="nav-btn" onclick="changeMonth(-1)"><span class="material-icons">chevron_left</span></button>
+      <span id="monthTitle" class="month-display">2026年5月</span>
+      <button class="nav-btn" onclick="changeMonth(1)"><span class="material-icons">chevron_right</span></button>
+      <button id="todayJumpBtn" class="today-btn" onclick="jumpToToday()">6</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </div>
+
+  <div class="report-container" id="personalReportArea">
+    <div class="report-title" id="reportUserGreeting">您好，以下為您的值勤日期與類別：</div>
+    <div class="report-list" id="reportList"></div>
+    <button class="btn-sync" onclick="syncToCalendar()"><span class="material-icons">sync</span> 同步至我的 Google 行事曆</button>
+  </div>
+
+<div class="modal-overlay" id="loginModal" style="display: none;">
+  <div class="modal-box modal-box-custom">
+    
+    <div class="logo-container">
+      <img src="https://jkes.tc.edu.tw/var/file/196/1196/img/big-logo.gif" alt="校徽 Logo" class="logo-img">
+    </div>
+    
+    <div class="system-title">行政值勤系統</div>
+    
+    <div class="input-group-custom" id="loginInputGroup">
+      <input type="text" id="loginAccount" class="mask-input-custom" placeholder="請輸入學務系統帳號" autocomplete="off" inputmode="text" autocorrect="off" autocapitalize="none">
+      
+      <button type="button" class="toggle-password-custom" id="toggleBtn">
+        <svg class="eye-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        </svg>
+        <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </button>
+    </div>
+
+    <div class="button-group-custom">
+      <button class="btn-enter" onclick="handleLogin()">進入系統</button>
+      <button class="btn-cancel-custom" onclick="closeModal('loginModal')">取消</button>
+    </div>
+    
+  </div>
+</div>
+
+  <div class="modal-overlay" id="dutyModal">
+    <div class="modal-box">
+      <div class="modal-header">值勤資料</div>
+      <div style="margin-bottom:14px; font-weight:500; color:#555;">日期：<span id="modalTargetDate">2026/07/01</span></div>
+      
+      <div class="form-group" id="groupAdminDuty" style="display:none;">
+        <div class="form-group-title">行政值勤 <span>▲</span></div>
+        <input type="text" id="inputAdminUser" class="form-input-box" placeholder="打字或由下方勾選" onfocus="storeOldValue(this)" onchange="onInputBoxChangeWithConfirm('inputAdminUser', 'adminUserRadio')">
+        <div class="dept-tabs">
+          <div class="dept-tab active" onclick="switchAdminDept('教務處')">教務處</div>
+          <div class="dept-tab" onclick="switchAdminDept('學務處')">學務處</div>
+          <div class="dept-tab" onclick="switchAdminDept('總務處')">總務處</div>
+          <div class="dept-tab" onclick="switchAdminDept('輔導室')">輔導室</div>
+        </div>
+        <div class="checkbox-list" id="adminUserList"></div>
+      </div>
+
+      <div class="form-group" id="groupSupervisorDuty" style="display:none;">
+        <div class="form-group-title">主管值勤 <span>▲</span></div>
+        <input type="text" id="inputSuperUser" class="form-input-box" placeholder="打字或由下方勾選" onfocus="storeOldValue(this)" onchange="onInputBoxChangeWithConfirm('inputSuperUser', 'superUserRadio')">
+        <div class="checkbox-list" id="supervisorUserList"></div>
+      </div>
+
+ <div class="form-group" id="groupOfficeDuty" style="display:none;">
+  <div class="form-group-title" style="display: flex; justify-content: space-between; align-items: center;">
+    <span style="font-size: 18px !important; font-weight: bold !important; color: #212529 !important;">
+      處室值勤 (<span id="spanOfficeName" style="font-size: inherit !important; font-weight: inherit !important; color: inherit !important;"></span>)
+    </span>
+    <span style="font-size: 14px; color: #777777;">▲</span> </div>
+  
+  <input type="text" id="inputOfficeUser" class="form-input-box" placeholder="打字或由下方勾選" onfocus="storeOldValue(this)" onchange="onInputBoxChangeWithConfirm('inputOfficeUser', 'officeUserRadio')">
+  <div class="checkbox-list" id="officeUserList"></div>
+</div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal('dutyModal')">關閉</button>
+        <button class="btn-submit" onclick="submitDutyForm()">儲存更新</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="customConfirmModal" style="z-index: 2000;">
+    <div class="modal-box confirm-box">
+      <div class="confirm-message" id="customConfirmMessage"></div>
+      <div class="confirm-footer">
+        <button class="btn-confirm-no" id="customConfirmBtnNo">取消</button>
+        <button class="btn-confirm-yes" id="customConfirmBtnYes">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="messageModal" style="position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); display:none; justify-content:center; align-items:center; z-index:3000;">
+  <div style="background: white; border-radius: 12px; width: 100%; max-width: 420px; padding: 30px 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; font-family: 'Noto Sans TC', sans-serif;">
+    <div id="modalMessageContent" style="font-size: 16px; color: #333; margin-bottom: 24px; line-height: 1.6; font-weight: 500;">提示訊息</div>
+    <div style="display: flex; justify-content: center;">
+      <button style="background: #1a73e8; color: white; border: none; padding: 10px 28px; border-radius: 20px; cursor: pointer; font-size: 15px; font-weight: 500; min-width: 100px; transition: 0.2s;" onclick="document.getElementById('messageModal').style.display = 'none'">確定</button>
+    </div>
+  </div>
+</div>
+
+    <div id="readOnlyDutyModal" class="modal-backdrop" style="display: none;">
+  <div class="pro-modal-card">
+    
+    <div class="pro-modal-header">
+      <div class="pro-modal-title">
+        <span class="material-symbols-outlined header-icon">calendar_month</span>
+        <span id="roDateTitle">2026-05-06</span> 值勤資訊
+      </div>
+      <button class="pro-close-x" onclick="closeModal('readOnlyDutyModal')">&times;</button>
+    </div>
+    
+    <div class="pro-modal-body">
+      <div class="duty-grid-item admin-highlight">
+        <span class="duty-label">
+          <span class="material-symbols-outlined">shield</span>行政值勤
+        </span>
+        <span class="duty-value" id="roAdmin">無</span>
+      </div>
+      
+      <div class="duty-grid-item super-highlight">
+        <span class="duty-label">
+          <span class="material-symbols-outlined">supervisor_account</span>主管值勤
+        </span>
+        <span class="duty-value" id="roSuper">無</span>
+      </div>
+      
+      <div class="duty-divider"></div>
+      
+      <div class="duty-grid-item">
+        <span class="duty-label">教務處值勤</span>
+        <span class="duty-value" id="roAcademic">無</span>
+      </div>
+      <div class="duty-grid-item">
+        <span class="duty-label">學務處值勤</span>
+        <span class="duty-value" id="roStudent">無</span>
+      </div>
+      <div class="duty-grid-item">
+        <span class="duty-label">總務處值勤</span>
+        <span class="duty-value" id="roGeneral">無</span>
+      </div>
+      <div class="duty-grid-item">
+        <span class="duty-label">輔導室值勤</span>
+        <span class="duty-value" id="roCounseling">無</span>
+      </div>
+    </div>
+    
+    <div class="pro-modal-footer">
+      <button class="pro-btn-close" onclick="closeModal('readOnlyDutyModal')">關閉</button>
+    </div>
+    
+  </div>
+</div>
+
+  <script>
+    const FB_BASE_URL = 'https://duty-15f2b-default-rtdb.firebaseio.com';
+    
+    //  自動抓取今天的年份與月份
+const initDate = new Date();
+let currentYear = initDate.getFullYear();
+let currentMonth = initDate.getMonth(); // 💡 抓出來自動是 0~11，完全符合你原本的設計邏輯
+    let loggedInUser = null; 
+    let allUsers = {};
+    let currentMonthDuties = {}; // 全域值勤資料物件
+    let selectedDateStr = "";
+    let selectedAdminDept = "教務處";
+    
+    let previousInputs = {
+      inputAdminUser: "",
+      inputSuperUser: "",
+      inputOfficeUser: ""
+    };
+
+    let confirmResolver = null;
+
+    window.onload = function() {
+      const today = new Date();
+      document.getElementById('todayJumpBtn').innerText = today.getDate();
+      fetchAllUsers().then(() => {
+        renderCalendar();
+        updateHeaderUI(); 
+      });
+
+      document.getElementById('customConfirmBtnYes').onclick = function() {
+        closeModal('customConfirmModal');
+        if (confirmResolver) confirmResolver(true);
+      };
+      document.getElementById('customConfirmBtnNo').onclick = function() {
+        closeModal('customConfirmModal');
+        if (confirmResolver) confirmResolver(false);
+      };
+    };
+
+    function showCustomConfirm(message) {
+      document.getElementById('customConfirmMessage').innerText = message;
+      openModal('customConfirmModal');
+      return new Promise((resolve) => {
+        confirmResolver = resolve;
+      });
+    }
+
+    // 呼叫自製提示彈窗
+    function showCustomMessage(message) {
+      document.getElementById('modalMessageContent').innerText = message;
+      document.getElementById('messageModal').style.display = 'flex';
+      }
+
+    async function fetchAllUsers() {
+      try {
+        let res = await fetch(`${FB_BASE_URL}/users.json`);
+        allUsers = await res.json() || {};
+      } catch(e) { console.error("無法取得使用者資料", e); }
+    }
+
+    // 關鍵：從資料庫抓取最新的值勤表到全域變數 currentMonthDuties
+    async function fetchMonthDuties() {
+      try {
+        let res = await fetch(`${FB_BASE_URL}/duties.json`);
+        currentMonthDuties = await res.json() || {};
+      } catch(e) { console.error("無法取得排程資料", e); }
+    }
+
+ async function renderCalendar() {
+      await fetchMonthDuties(); // 每次渲染日曆前都先抓最新資料
+      document.getElementById('monthTitle').innerText = `${currentYear}年${currentMonth + 1}月`;
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      const weeks = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+      weeks.forEach(w => {
+        let h = document.createElement('div');
+        h.className = 'calendar-day-header';
+        h.innerText = w;
+        grid.appendChild(h);
+      });
+
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const today = new Date();
+
+      for (let i = 0; i < firstDay; i++) {
+        let emptyCell = document.createElement('div');
+        emptyCell.className = 'calendar-cell';
+        emptyCell.style.cursor = 'default';
+        grid.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        let cell = document.createElement('div');
+        cell.className = 'calendar-cell';
+        let dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        cell.onclick = () => onDateClick(dateStr);
+
+        let numBox = document.createElement('span');
+        numBox.className = 'day-number-box';
+        numBox.innerText = day;
+
+        if (today.getFullYear() === currentYear && today.getMonth() === currentMonth && today.getDate() === day) {
+          numBox.classList.add('bg-today');
+        }
+        cell.appendChild(numBox);
+
+        if (currentMonthDuties[dateStr]) {
+          let d = currentMonthDuties[dateStr];
+          let card = document.createElement('div');
+          card.className = 'duty-card';
+          
+          // 💡 修正核心：強制透過 window.loggedInUser 讀取全域變數，確保抓到最新的「曾建雄」
+          const highlightName = (text) => {
+            const currentUser = window.loggedInUser || loggedInUser; 
+            if (!currentUser || !currentUser.name || !text) return text || '';
+            
+            // 如果字串包含登入者姓名，就進行變紅取代
+            if (text.includes(currentUser.name)) {
+              return text.replace(currentUser.name, `<span style="color: #ff5252; font-weight: bold;">${currentUser.name}</span>`);
+            }
+            return text;
+          };
+          
+          let titleText = d.all ? `${d.all}(${d.adminTitle || ''})` : '值勤人員';
+          card.innerHTML = `<div class="duty-card-title"><span class="material-symbols-outlined" style="font-size: 16px; color: white; font-weight: bold; vertical-align: middle; margin-right: -3px; margin-left: -3px;">emoji_people</span>${highlightName(titleText)}</div>`;
+        
+          let supervisorText = d.director ? `${d.director}(${d.directorTitle || ''})` : '';
+          card.innerHTML += `<div class="duty-detail-line">主管: ${highlightName(supervisorText)}</div>`;
+          card.innerHTML += `<div class="duty-detail-line">教務處: ${highlightName(d.academic || '')}</div>`;
+          card.innerHTML += `<div class="duty-detail-line">學務處: ${highlightName(d.student || '')}</div>`;
+          card.innerHTML += `<div class="duty-detail-line">總務處: ${highlightName(d.general || '')}</div>`;
+          card.innerHTML += `<div class="duty-detail-line">輔導室: ${highlightName(d.counseling || '')}</div>`;
+          
+          if(cell) cell.appendChild(card);
+        }
+        grid.appendChild(cell);
+      }
+    }
+
+    function changeMonth(dir) {
+      currentMonth += dir;
+      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+      if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+      renderCalendar();
+    }
+
+    function jumpToToday() {
+      const today = new Date();
+      currentYear = today.getFullYear();
+      currentMonth = today.getMonth();
+      renderCalendar();
+    }
+
+function updateTodayHeaderDuty() {
+  const today = new Date();
+  let dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  let headerBox = document.getElementById('todayDutyInfo');
+  
+  if(!headerBox) return;
+
+  fetch(`${FB_BASE_URL}/duties/${dateStr}.json`).then(r => r.json()).then(d => {
+    if (d && d.all) {
+      // 替換核心：使用 material-symbols-outlined 輸出 emoji_people 並鎖定顏色與大小
+      headerBox.innerHTML = `<span class="material-symbols-outlined" style="font-size: 26px; color: #1a4a75; font-weight: bold; vertical-align: middle;">emoji_people</span>今日值勤: ${d.all}`;
+      headerBox.style.display = 'flex';
+    } else {
+      headerBox.style.display = 'none';
+    }
+  }).catch(() => { headerBox.style.display = 'none'; });
+}
+
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function openLoginModal() { openModal('loginModal'); }
+
+    function updateHeaderUI() {
+  const authBlock = document.getElementById('headerAuthBlock');
+  if (!authBlock) return;
+
+  // 只負責更新右側的「登入/登出」狀態，不干涉中間的今日值勤元件
+  if (loggedInUser) {
+    authBlock.innerHTML = `
+      <div class="btn-logout-container">
+        <span class="user-info-text">${loggedInUser.name}</span>
+        <button class="btn-logout" onclick="handleLogout()">登出</button>
+      </div>
+    `;
+  } else {
+    authBlock.innerHTML = `
+      <button id="loginHeaderBtn" class="btn-login" onclick="openLoginModal()">登入</button>
+    `;
+  }
+  
+  // 依然在最後呼叫這個函數，它會單獨去抓 Firebase 並顯示在中間的 #todayDutyInfo 上
+  updateTodayHeaderDuty();
+}
+
+    function handleLogin() {
+      let acc = document.getElementById('loginAccount').value.trim();
+      if(!acc) return showCustomMessage('請輸入帳號');
+
+      let found = Object.values(allUsers).find(u => u.account === acc);
+      if(found) {
+        loggedInUser = found;
+        closeModal('loginModal');
+        updateHeaderUI();
+        
+        // 1. 先執行個人報表（就算它裡面偷偷把月份改掉也沒關係了）
+        renderPersonalReport();
+        
+        // 💡 2. 核心新增：在畫日曆前，重新強制校正回「當前真實月份」！
+        const resetDate = new Date();
+        currentYear = resetDate.getFullYear();
+        currentMonth = resetDate.getMonth();
+
+        // 3. 最後安穩地渲染當月日曆
+        renderCalendar();
+      } else { showCustomMessage('無此帳號，請重新輸入！如有問題，請洽資訊組#116'); }
+    }
+
+    async function handleLogout() {
+      let isConfirm = await showCustomConfirm('您確定要登出系統嗎？');
+      if(isConfirm) {
+        loggedInUser = null;
+        document.getElementById('loginAccount').value = ''; 
+        document.getElementById('personalReportArea').style.display = 'none'; 
+        updateHeaderUI();
+        renderCalendar(); 
+      }
+    }
+
+    // 修改原本的 onDateClick 函數
+    function onDateClick(dateStr) {
+      // 如果尚未登入，改為顯示「唯讀視窗」而不是直接跳警告
+      if (!loggedInUser) {
+        showReadOnlyDuty(dateStr);
+        return;
+      }
+
+      // 以下為原本登入後的編輯邏輯保持不變...
+      selectedDateStr = dateStr;
+      document.getElementById('modalTargetDate').innerText = dateStr.replace(/-/g, '/');
+      
+      let dateObj = new Date(dateStr);
+      let isAugust = (dateObj.getMonth() === 7); 
+      loggedInUser.activeDept = isAugust ? loggedInUser.office8 : loggedInUser.dept;
+      loggedInUser.activeTitle = isAugust ? loggedInUser.title8 : loggedInUser.title;
+
+      let d = currentMonthDuties[dateStr] || {};
+      
+      if (d.academic) selectedAdminDept = '教務處';
+      else if (d.student) selectedAdminDept = '學務處';
+      else if (d.general) selectedAdminDept = '總務處';
+      else if (d.counseling) selectedAdminDept = '輔導室';
+      else selectedAdminDept = '教務處';
+
+      document.getElementById('inputAdminUser').value = d.all || '';
+      document.getElementById('inputSuperUser').value = d.director || '';
+      
+      let officeVal = '';
+      if (loggedInUser.activeDept === '教務處') officeVal = d.academic || '';
+      if (loggedInUser.activeDept === '學務處') officeVal = d.student || '';
+      if (loggedInUser.activeDept === '總務處') officeVal = d.general || '';
+      if (loggedInUser.activeDept === '輔導室') officeVal = d.counseling || '';
+      document.getElementById('inputOfficeUser').value = officeVal;
+
+      previousInputs.inputAdminUser = d.all || '';
+      previousInputs.inputSuperUser = d.director || '';
+      previousInputs.inputOfficeUser = officeVal;
+
+      setupDutyFormUI();
+      openModal('dutyModal');
+    }
+
+    // 新增：顯示未登入時的唯讀資訊
+    function showReadOnlyDuty(dateStr) {
+      let d = currentMonthDuties[dateStr] || {};
+      
+      // 更新標題日期
+      document.getElementById('roDateTitle').innerText = dateStr;
+      
+      // 填入各處室資料，如果沒有資料則顯示「無」
+      document.getElementById('roAdmin').innerText = d.all || '無';
+      document.getElementById('roSuper').innerText = d.director || '無';
+      document.getElementById('roAcademic').innerText = d.academic || '無';
+      document.getElementById('roStudent').innerText = d.student || '無';
+      document.getElementById('roGeneral').innerText = d.general || '無';
+      document.getElementById('roCounseling').innerText = d.counseling || '無';
+      
+      // 打開唯讀視窗
+      openModal('readOnlyDutyModal');
+    }
+
+    function setupDutyFormUI() {
+      const lvl = loggedInUser.level;
+      document.getElementById('groupAdminDuty').style.display = (lvl == 1 || lvl == 3) ? 'block' : 'none';
+      document.getElementById('groupSupervisorDuty').style.display = (lvl == 2 || lvl == 3) ? 'block' : 'none';
+      document.getElementById('groupOfficeDuty').style.display = (lvl == 1 || lvl == 2) ? 'block' : 'none';
+      
+      if(lvl == 1 || lvl == 3) switchAdminDept(selectedAdminDept);
+      if(lvl == 2 || lvl == 3) renderSupervisorOptions();
+      if(lvl == 1 || lvl == 2) {
+        document.getElementById('spanOfficeName').innerText = loggedInUser.activeDept || '未敘明處室';
+        renderOfficeOptions();
+      }
+    }
+
+    function storeOldValue(element) {
+      previousInputs[element.id] = element.value.trim();
+    }
+
+    async function setInputValueWithConfirm(inputId, radioName, newVal) {
+      let currentVal = document.getElementById(inputId).value.trim();
+      
+      if (currentVal && currentVal !== newVal) {
+        let isConfirm = await showCustomConfirm(`此欄位已被 ${currentVal} 填入，你確定要取代此人？`);
+        if (!isConfirm) {
+          syncRadioState(inputId, radioName, currentVal);
+          return; 
+        }
+      }
+      
+      document.getElementById(inputId).value = newVal;
+      previousInputs[inputId] = newVal;
+      syncRadioState(inputId, radioName, newVal);
+    }
+
+    async function onInputBoxChangeWithConfirm(inputId, radioName) {
+      let element = document.getElementById(inputId);
+      let newVal = element.value.trim();
+      let oldVal = previousInputs[inputId];
+
+      if (oldVal && oldVal !== newVal) {
+       let isConfirm = await showCustomConfirm(`此欄位已被 ${oldVal} 填入，你確定要取代此人嗎？`);
+        if (!isConfirm) {
+          element.value = oldVal;
+          syncRadioState(inputId, radioName, oldVal);
+          return;
+        }
+      }
+      previousInputs[inputId] = newVal;
+      syncRadioState(inputId, radioName, newVal);
+    }
+
+    function syncRadioState(inputId, radioName, targetVal) {
+      let radios = document.getElementsByName(radioName);
+      let found = false;
+      for (let r of radios) {
+        if (r.value === targetVal) {
+          r.checked = true;
+          found = true;
+        }
+      }
+      if (!found) {
+        for (let r of radios) {
+          if (r.value === "") r.checked = true;
+        }
+      }
+    }
+
+    function sortUsersByTitle(userArray, dateStr) {
+      const isAugust = (new Date(dateStr).getMonth() === 7);
+      return userArray.sort((a, b) => {
+        let titleA = isAugust ? (a.title8 || '') : (a.title || '');
+        let titleB = isAugust ? (b.title8 || '') : (b.title || '');
+        
+        let numA = titleA.match(/^\d+/);
+        let numB = titleB.match(/^\d+/);
+        
+        if (numA && numB) {
+          return parseInt(numA[0], 10) - parseInt(numB[0], 10);
+        }
+        if (numA) return -1; 
+        if (numB) return 1;  
+        
+        return titleA.localeCompare(titleB, 'zh-Hant');
+      });
+    }
+
+    function switchAdminDept(deptName) {
+      selectedAdminDept = deptName;
+      document.querySelectorAll('.dept-tab').forEach(el => {
+        el.classList.toggle('active', el.innerText === deptName);
+      });
+      
+      let container = document.getElementById('adminUserList');
+      container.innerHTML = '';
+      let currentVal = document.getElementById('inputAdminUser').value.trim();
+
+      let filtered = Object.values(allUsers).filter(u => {
+        let userDept = (new Date(selectedDateStr).getMonth() === 7) ? u.office8 : u.dept;
+        return userDept === deptName && u.level == 1;
+      });
+
+      sortUsersByTitle(filtered, selectedDateStr);
+
+      filtered.forEach(u => {
+        let userTitle = (new Date(selectedDateStr).getMonth() === 7) ? u.title8 : u.title;
+        let isChecked = (currentVal === u.name) ? 'checked' : '';
+        container.innerHTML += `
+          <label class="checkbox-item">
+            <input type="radio" name="adminUserRadio" value="${u.name}" data-title="${userTitle}" ${isChecked} onclick="setInputValueWithConfirm('inputAdminUser', 'adminUserRadio', this.value)">
+            ${u.name}(${userTitle || ''})
+          </label>`;
+      });
+      
+      let noneChecked = (!filtered.some(u => u.name === currentVal) || !currentVal) ? 'checked' : '';
+      container.innerHTML += `<label class="checkbox-item text-red"><input type="radio" name="adminUserRadio" value="" ${noneChecked} onclick="setInputValueWithConfirm('inputAdminUser', 'adminUserRadio', '')"> (無)</label>`;
+    }
+
+ function renderSupervisorOptions() {
+  let container = document.getElementById('supervisorUserList');
+  container.innerHTML = '';
+  let currentVal = document.getElementById('inputSuperUser').value.trim();
+  
+  let filtered = Object.values(allUsers).filter(u => u.level == 2 || u.level == 3);
+  sortUsersByTitle(filtered, selectedDateStr);
+
+  filtered.forEach(u => {
+    let userTitle = (selectedDateStr.split('-')[1] === '08') ? u.title8 : u.title;
+    
+    // 🌟 修正核心：如果 userTitle 是空字串、null 或 undefined，則直接跳過此人，不顯示在畫面上
+    if (!userTitle) return; 
+
+    let isChecked = (currentVal === u.name) ? 'checked' : '';
+    container.innerHTML += `
+      <label class="checkbox-item">
+        <input type="radio" name="superUserRadio" value="${u.name}" data-title="${userTitle}" ${isChecked} onclick="setInputValueWithConfirm('inputSuperUser', 'superUserRadio', this.value)">
+        ${u.name}(${userTitle})
+      </label>`;
+  });
+  
+  // 維持原本的「無」選項邏輯
+  let noneChecked = (!filtered.some(u => u.name === currentVal) || !currentVal) ? 'checked' : '';
+  container.innerHTML += `<label class="checkbox-item text-red"><input type="radio" name="superUserRadio" value="" ${noneChecked} onclick="setInputValueWithConfirm('inputSuperUser', 'superUserRadio', '')"> 無</label>`;
+}
+
+    function renderOfficeOptions() {
+      let container = document.getElementById('officeUserList');
+      let currentVal = document.getElementById('inputOfficeUser').value.trim();
+      
+      let meChecked = (currentVal === loggedInUser.name) ? 'checked' : '';
+      let noneChecked = (currentVal !== loggedInUser.name) ? 'checked' : '';
+      
+      let userTitle = loggedInUser.activeTitle || "";
+      container.innerHTML = `
+        <label class="checkbox-item">
+          <input type="radio" name="officeUserRadio" value="${loggedInUser.name}" ${meChecked} onclick="setInputValueWithConfirm('inputOfficeUser', 'officeUserRadio', this.value)">
+          ${loggedInUser.name}(${userTitle}) (您)
+        </label>
+        <label class="checkbox-item text-red">
+          <input type="radio" name="officeUserRadio" value="" ${noneChecked} onclick="setInputValueWithConfirm('inputOfficeUser', 'officeUserRadio', '')"> 無
+        </label>
+      `;
+    }
+
+    // 【修正核心】表單送出後，依序執行更新，確保報表能抓到最新資料
+    async function submitDutyForm() {
+      let payload = currentMonthDuties[selectedDateStr] || {
+        academic: "", adminTitle: "", all: "", counseling: "", director: "", directorTitle: "", general: "", student: ""
+      };
+
+      if(loggedInUser.level == 1 || loggedInUser.level == 3) {
+        let adminVal = document.getElementById('inputAdminUser').value.trim();
+        payload.all = adminVal;
+        
+        let checkedAdmin = document.querySelector('input[name="adminUserRadio"]:checked');
+        if(checkedAdmin && checkedAdmin.value === adminVal) {
+          payload.adminTitle = checkedAdmin.getAttribute('data-title') || "";
+        } else {
+          let userObj = Object.values(allUsers).find(u => u.name === adminVal);
+          payload.adminTitle = userObj ? ((new Date(selectedDateStr).getMonth() === 7) ? userObj.title8 : userObj.title) : "";
+        }
+
+        payload.academic = ""; payload.student = ""; payload.general = ""; payload.counseling = "";
+        if(adminVal) {
+          if (selectedAdminDept === '教務處') payload.academic = adminVal;
+          if (selectedAdminDept === '學務處') payload.student = adminVal;
+          if (selectedAdminDept === '總務處') payload.general = adminVal;
+          if (selectedAdminDept === '輔導室') payload.counseling = adminVal;
+        }
+      }
+
+      if(loggedInUser.level == 2 || loggedInUser.level == 3) {
+        let superVal = document.getElementById('inputSuperUser').value.trim();
+        payload.director = superVal;
+        
+        let checkedSuper = document.querySelector('input[name="superUserRadio"]:checked');
+        if(checkedSuper && checkedSuper.value === superVal) {
+          payload.directorTitle = checkedSuper.getAttribute('data-title') || "";
+        } else {
+          let userObj = Object.values(allUsers).find(u => u.name === superVal);
+          payload.directorTitle = userObj ? ((new Date(selectedDateStr).getMonth() === 7) ? userObj.title8 : userObj.title) : "";
+        }
+      }
+
+      if(loggedInUser.level == 1 || loggedInUser.level == 2) {
+        let officeVal = document.getElementById('inputOfficeUser').value.trim();
+        let deptKey = 'academic';
+        if(loggedInUser.activeDept === '學務處') deptKey = 'student';
+        if(loggedInUser.activeDept === '總務處') deptKey = 'general';
+        if(loggedInUser.activeDept === '輔導室') deptKey = 'counseling';
+        
+        payload[deptKey] = officeVal;
+      }
+
+      // 1. 先將資料 PUT 到 Firebase
+      await fetch(`${FB_BASE_URL}/duties/${selectedDateStr}.json`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
+
+      closeModal('dutyModal');
+
+      // 2. 關鍵：使用 await 確保日曆重新 fetch 資料並渲染完成
+      await renderCalendar(); 
+
+      // 3. 更新標題今日資訊與報表
+      updateHeaderUI();
+      if(loggedInUser) {
+        renderPersonalReport(); // 此時全域 currentMonthDuties 已經是 fetchMonthDuties 抓回來的最新版
+      }
+    }
+
+function renderPersonalReport() {
+      const area = document.getElementById('personalReportArea');
+      const listContainer = document.getElementById('reportList');
+      if (!loggedInUser) return;
+      document.getElementById('reportUserGreeting').innerText = `${loggedInUser.name} 您好，以下為您的值勤日期與類別：`;
+      listContainer.innerHTML = '';
+      
+      let dateGroups = {};
+
+      Object.keys(currentMonthDuties).forEach(dateKey => {
+        let d = currentMonthDuties[dateKey];
+        if(!dateGroups[dateKey]) dateGroups[dateKey] = [];
+
+        if(d.all === loggedInUser.name) dateGroups[dateKey].push('行政值勤');
+        if(d.director === loggedInUser.name) dateGroups[dateKey].push('主管值勤');
+        if(d.academic === loggedInUser.name || d.student === loggedInUser.name || d.general === loggedInUser.name || d.counseling === loggedInUser.name) {
+          if(!dateGroups[dateKey].includes('處室值勤')) dateGroups[dateKey].push('處室值勤');
+        }
+      });
+
+      let userDuties = [];
+      Object.keys(dateGroups).forEach(dateKey => {
+        if(dateGroups[dateKey].length > 0) {
+          let combinedType = dateGroups[dateKey].join('/');
+          userDuties.push({ date: dateKey, type: combinedType });
+        }
+      });
+
+      if(userDuties.length === 0) {
+        listContainer.innerHTML = '<div style="color:#6c757d; font-size:14px;">目前查無您的值勤排程。</div>';
+      } else {
+        userDuties.sort((a,b) => new Date(a.date) - new Date(b.date));
+        userDuties.forEach(item => {
+          listContainer.innerHTML += `<div class="report-badge" data-date="${item.date}" data-type="${item.type}">${item.date} ｜ ${item.type}</div>`;
+        });
+      }
+
+      // 👇 新增這段：透過 Google Apps Script 抓取真實 Gmail 帳號
+      const syncBtn = document.querySelector('.btn-sync');
+      if (syncBtn) {
+        // 先顯示讀取中，避免空白等待感
+        syncBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步至我的 Google 行事曆 (讀取帳號中...)`;
+        
+        // 呼叫 GAS 後端取得 Gmail
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function(gmail) {
+              // 成功抓到信箱時更新按鈕 (如果對方沒授權可能會回傳空白，做個防呆)
+              let displayEmail = gmail ? gmail : "未授權取得信箱";
+              syncBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步至我的 Google 行事曆 (${displayEmail})`;
+            })
+            .withFailureHandler(function(err) {
+              // 發生錯誤時的備用顯示
+              syncBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步至我的 Google 行事曆`;
+              console.error("無法取得 Google 信箱: ", err);
+            })
+            .getGoogleUserEmail(); // 呼叫剛剛在 Code.gs 寫的函式
+        } else {
+          // 本地測試環境備用顯示
+          syncBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步至我的 Google 行事曆 (本地測試)`;
+        }
+      }
+      // 👆 新增結束
+
+      area.style.display = 'block';
+    }
+
+  function syncToCalendar() {
+  let badges = document.querySelectorAll('.report-badge');
+  let dutyList = [];
+  badges.forEach(b => {
+    let date = b.getAttribute('data-date');
+    let type = b.getAttribute('data-type');
+    if(date && type) dutyList.push({date: date, type: type});
+  });
+  
+  if(dutyList.length === 0) return showCustomMessage('沒有排程可同步！');
+  
+  // 1. 自動偵測點擊的按鈕，並暫存原本的 HTML 內容
+  const syncBtn = document.querySelector('.btn-sync') || (typeof event !== 'undefined' ? event.target : null) || document.activeElement;
+  const originalHTML = syncBtn ? syncBtn.innerHTML : '';
+  
+  // 2. 立即將按鈕禁用 (Disabled) 並顯示同步中
+  if (syncBtn) {
+    syncBtn.disabled = true;
+    // 這裡使用 material-symbols-outlined 的 sync 圖示，並加上 spin-icon 旋轉 CSS
+    syncBtn.innerHTML = `<span class="material-symbols-outlined spin-icon" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步中.....`;
+  }
+
+  // 3. 呼叫 Google Apps Script 後端
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        // 成功時：解除禁用、恢復按鈕文字、彈出提示
+        if (syncBtn) {
+          syncBtn.disabled = false;
+          syncBtn.innerHTML = originalHTML;
+        }
+        showCustomMessage(res.message); 
+      })
+      .withFailureHandler(function(err) {
+        // 💡 關鍵防卡死：萬一 Google API 噴錯，也要把按鈕還給使用者
+        if (syncBtn) {
+          syncBtn.disabled = false;
+          syncBtn.innerHTML = originalHTML;
+        }
+        showCustomMessage("同步失敗，請稍後再試！錯誤訊： " + err.message);
+      })
+      .syncToGoogleCalendar(loggedInUser.account, dutyList);
+  } else {
+    // 網頁本地端測試環境模擬（1.5秒後自動還原）
+    setTimeout(() => {
+      if (syncBtn) {
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = originalHTML;
+      }
+      showCustomMessage('偵測到本地環境：模擬同步成功！');
+    }, 1500);
+  }
+}
+// 控制密碼顯示與隱藏
+const toggleBtn = document.getElementById('toggleBtn');
+const loginInput = document.getElementById('loginAccount');
+
+// 1. 滑鼠按下：顯示明碼與張開的眼睛
+toggleBtn.addEventListener('mousedown', function() {
+  loginInput.classList.add('show-text');
+  this.classList.add('visible');
+});
+
+// 2. 滑鼠放開：恢復暗碼與閉上的眼睛
+toggleBtn.addEventListener('mouseup', function() {
+  loginInput.classList.remove('show-text');
+  this.classList.remove('visible');
+});
+
+// 3. 防呆機制：如果滑鼠按住後，游標拖移離開了按鈕才放開，也要恢復暗碼
+toggleBtn.addEventListener('mouseleave', function() {
+  loginInput.classList.remove('show-text');
+  this.classList.remove('visible');
+});
+
+// 4. 手機版觸控支援：手指按住顯示
+toggleBtn.addEventListener('touchstart', function(e) {
+  e.preventDefault(); // 防止手機瀏覽器觸發預設的反白或選單
+  loginInput.classList.add('show-text');
+  this.classList.add('visible');
+});
+
+// 5. 手機版觸控支援：手指放開隱藏
+toggleBtn.addEventListener('touchend', function() {
+  loginInput.classList.remove('show-text');
+  this.classList.remove('visible');
+});
+
+// 讓使用者在輸入框按下 Enter 也能直接登入
+loginInput.addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    handleLogin();
+  }
+});
+</script>
+</body>
+</html>
