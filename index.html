@@ -929,6 +929,44 @@
       } catch(e) { console.error("無法取得排程資料", e); }
     }
 
+
+// 💡 計算並顯示登入者當月的「處室值勤」次數
+function updateMonthlyDutyCount() {
+  const displayEl = document.getElementById('monthlyDutyCountDisplay');
+  if (!displayEl) return;
+
+  // 如果未登入，隱藏統計資訊並提早結束
+  if (!loggedInUser) {
+    displayEl.style.display = 'none';
+    return;
+  }
+
+  let officeDutyCount = 0;
+  // 建立當前畫面上日曆月份的前綴，確保格式如 "2026-08-"
+  const monthPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-`;
+
+  // currentMonthDuties 包含了所有日期的資料，因此需要用 prefix 篩選出當月的
+  Object.keys(currentMonthDuties).forEach(dateStr => {
+    if (dateStr.startsWith(monthPrefix)) {
+      let d = currentMonthDuties[dateStr];
+      // 判斷是否為處室值勤：教務處、學務處、總務處、輔導室 任一欄位與登入者同名
+      if (
+        d.academic === loggedInUser.name ||
+        d.student === loggedInUser.name ||
+        d.general === loggedInUser.name ||
+        d.counseling === loggedInUser.name
+      ) {
+        officeDutyCount++;
+      }
+    }
+  });
+
+  // 更新畫面並顯示
+  displayEl.innerText = `${loggedInUser.name} ${currentMonth + 1}月處室值勤：${officeDutyCount} 次`;
+  displayEl.style.display = 'block'; 
+}
+
+  
     async function renderCalendar() {
       await fetchMonthDuties(); 
       document.getElementById('monthTitle').innerText = `${currentYear}年${currentMonth + 1}月`;
@@ -995,6 +1033,11 @@
           if(cell) cell.appendChild(card);
         }
         grid.appendChild(cell);
+      }
+
+      // ✨ 在這裡加入更新次數統計的函數呼叫
+      if (typeof updateMonthlyDutyCount === 'function') {
+        updateMonthlyDutyCount();
       }
     }
 
