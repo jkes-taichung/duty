@@ -929,7 +929,7 @@
       } catch(e) { console.error("無法取得排程資料", e); }
     }
 
-    async function renderCalendar() {
+   async function renderCalendar() {
       await fetchMonthDuties(); 
       document.getElementById('monthTitle').innerText = `${currentYear}年${currentMonth + 1}月`;
       const grid = document.getElementById('calendarGrid');
@@ -997,32 +997,7 @@
         grid.appendChild(cell);
       }
 
-      // 💡 新增：計算右上角的當月值勤總天數
-      let topRightCountEl = document.getElementById('topRightDutyCount');
-      if (topRightCountEl) {
-        if (loggedInUser) {
-          let monthDutyCount = 0;
-          // 走訪該月份每一天的排班表
-          Object.values(currentMonthDuties).forEach(d => {
-            // 只要任何一個職位有登入者的名字，該天就算1次值勤
-            if (d.all === loggedInUser.name ||
-                d.director === loggedInUser.name ||
-                d.academic === loggedInUser.name ||
-                d.student === loggedInUser.name ||
-                d.general === loggedInUser.name ||
-                d.counseling === loggedInUser.name) {
-              monthDutyCount++;
-            }
-          });
-          
-          topRightCountEl.innerText = `本月值勤：${monthDutyCount} 次`;
-          topRightCountEl.style.display = 'block'; // 顯示標籤
-        } else {
-          topRightCountEl.style.display = 'none'; // 未登入時隱藏
-        }
-      }
-
-      // 💡 原本的下方報表更新
+      // 💡 新增：當日曆渲染完成且有使用者登入時，同步更新下方個人報表與統計次數
       if (loggedInUser) {
         renderPersonalReport();
       }
