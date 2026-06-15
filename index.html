@@ -1343,14 +1343,13 @@
       }
     }
 
-    function renderPersonalReport() {
+   function renderPersonalReport() {
       const area = document.getElementById('personalReportArea');
       const listContainer = document.getElementById('reportList');
       if (!loggedInUser) return;
-      document.getElementById('reportUserGreeting').innerText = `${loggedInUser.name} 您好，以下為您的值勤日期與類別：`;
-      listContainer.innerHTML = '';
       
       let dateGroups = {};
+      let officeDutyCount = 0; // 💡 新增：處室值勤計數器
 
       Object.keys(currentMonthDuties).forEach(dateKey => {
         let d = currentMonthDuties[dateKey];
@@ -1359,9 +1358,21 @@
         if(d.all === loggedInUser.name) dateGroups[dateKey].push('行政值勤');
         if(d.director === loggedInUser.name) dateGroups[dateKey].push('主管值勤');
         if(d.academic === loggedInUser.name || d.student === loggedInUser.name || d.general === loggedInUser.name || d.counseling === loggedInUser.name) {
-          if(!dateGroups[dateKey].includes('處室值勤')) dateGroups[dateKey].push('處室值勤');
+          if(!dateGroups[dateKey].includes('處室值勤')) {
+            dateGroups[dateKey].push('處室值勤');
+            officeDutyCount++; // 💡 累加處室值勤次數
+          }
         }
       });
+
+      // 💡 修改標題：加入具體的月份與處室值勤次數統計，並用紅色高亮次數
+      document.getElementById('reportUserGreeting').innerHTML = 
+        `${loggedInUser.name} 您好，以下為您 ${currentMonth + 1} 月份的值勤日期： 
+         <span style="color: #d93025; font-weight: bold; margin-left: 10px; background: #fce8e6; padding: 2px 8px; border-radius: 12px; font-size: 15px;">
+           當月處室值勤共 ${officeDutyCount} 次
+         </span>`;
+
+      listContainer.innerHTML = '';
 
       let userDuties = [];
       Object.keys(dateGroups).forEach(dateKey => {
@@ -1380,7 +1391,6 @@
         });
       }
       
-      // 💡 移除舊版 GAS 抓信箱邏輯，換成乾淨的前端顯示
       const syncBtn = document.querySelector('.btn-sync');
       if (syncBtn) {
         syncBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 22px; vertical-align: middle; margin-right: 5px;">sync</span>同步至我的 Google 行事曆`;
