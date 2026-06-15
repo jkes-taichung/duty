@@ -996,8 +996,12 @@
         }
         grid.appendChild(cell);
       }
-    }
 
+      // 💡 新增：當日曆渲染完成且有使用者登入時，同步更新下方個人報表與統計次數
+      if (loggedInUser) {
+        renderPersonalReport();
+      }
+    }
     function changeMonth(dir) {
       currentMonth += dir;
       if (currentMonth > 11) { currentMonth = 0; currentYear++; }
