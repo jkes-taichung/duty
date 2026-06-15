@@ -684,12 +684,17 @@
 
 
 
-  <div class="calendar-container">
-    <div class="calendar-nav">
-      <button class="nav-btn" onclick="changeMonth(-1)"><span class="material-icons">chevron_left</span></button>
-      <span id="monthTitle" class="month-display">2026年5月</span>
-      <button class="nav-btn" onclick="changeMonth(1)"><span class="material-icons">chevron_right</span></button>
-      <button id="todayJumpBtn" class="today-btn" onclick="jumpToToday()">6</button>
+<div class="calendar-container">
+    <div class="calendar-nav" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center;">
+        <button class="nav-btn" onclick="changeMonth(-1)"><span class="material-icons">chevron_left</span></button>
+        <span id="monthTitle" class="month-display" style="margin: 0 10px;">2026年5月</span>
+        <button class="nav-btn" onclick="changeMonth(1)"><span class="material-icons">chevron_right</span></button>
+        <button id="todayJumpBtn" class="today-btn" onclick="jumpToToday()" style="margin-left: 10px;">6</button>
+      </div>
+
+      <div id="monthlyDutyCountDisplay" style="color: #ff5252; font-weight: bold; font-size: 16px; display: none;">
+      </div>
     </div>
     <div class="calendar-grid" id="calendarGrid"></div>
   </div>
