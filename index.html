@@ -1165,11 +1165,20 @@ function updateMonthlyDutyCount() {
 
       let d = currentMonthDuties[dateStr] || {};
       
-      if (d.academic) selectedAdminDept = '教務處';
-      else if (d.student) selectedAdminDept = '學務處';
-      else if (d.general) selectedAdminDept = '總務處';
-      else if (d.counseling) selectedAdminDept = '輔導室';
-      else selectedAdminDept = '教務處';
+      // ✨【關鍵修正】因為各處室資料現在會並存，
+      // 必須精準檢查「哪一個處室的名字等於大值（d.all）」，以此決定行政值勤Radio要點選哪一個處室。
+      if (d.all && d.academic === d.all) selectedAdminDept = '教務處';
+      else if (d.all && d.student === d.all) selectedAdminDept = '學務處';
+      else if (d.all && d.general === d.all) selectedAdminDept = '總務處';
+      else if (d.all && d.counseling === d.all) selectedAdminDept = '輔導室';
+      else {
+        // 如果當天還沒有行政值勤人員（d.all 為空），再依據現有處室資料做彈性預設
+        if (d.academic) selectedAdminDept = '教務處';
+        else if (d.student) selectedAdminDept = '學務處';
+        else if (d.general) selectedAdminDept = '總務處';
+        else if (d.counseling) selectedAdminDept = '輔導室';
+        else selectedAdminDept = '教務處'; // 完全沒資料時的保底預設
+      }
       
       document.getElementById('inputAdminUser').value = d.all || '';
       document.getElementById('inputSuperUser').value = d.director || '';      
@@ -1179,13 +1188,15 @@ function updateMonthlyDutyCount() {
       if (loggedInUser.activeDept === '總務處') officeVal = d.general || '';
       if (loggedInUser.activeDept === '輔導室') officeVal = d.counseling || '';
       document.getElementById('inputOfficeUser').value = officeVal;
+      
+      // 這裡你原本寫得很好，有確實將舊值保存到 previousInputs 中
       previousInputs.inputAdminUser = d.all || '';
       previousInputs.inputSuperUser = d.director || '';
       previousInputs.inputOfficeUser = officeVal;
+      
       setupDutyFormUI();
       openModal('dutyModal');
     }
-
     function showReadOnlyDuty(dateStr) {
       let d = currentMonthDuties[dateStr] || {};     
       document.getElementById('roDateTitle').innerText = dateStr;     
