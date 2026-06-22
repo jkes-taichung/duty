@@ -978,11 +978,11 @@ function updateMonthlyDutyCount() {
     if (dateStr.startsWith(monthPrefix)) {
       let d = currentMonthDuties[dateStr];
       // 判斷是否為處室值勤：教務處、學務處、總務處、輔導室 任一欄位與登入者同名
-      if (
-        d.academic === loggedInUser.name ||
-        d.student === loggedInUser.name ||
-        d.general === loggedInUser.name ||
-        d.counseling === loggedInUser.name
+if (
+        (d.academic && d.academic.includes(loggedInUser.name)) ||
+        (d.student && d.student.includes(loggedInUser.name)) ||
+        (d.general && d.general.includes(loggedInUser.name)) ||
+        (d.counseling && d.counseling.includes(loggedInUser.name))
       ) {
         officeDutyCount++;
       }
