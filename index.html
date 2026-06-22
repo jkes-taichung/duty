@@ -1447,12 +1447,18 @@ if (
         let d = currentMonthDuties[dateKey];
         if(!dateGroups[dateKey]) dateGroups[dateKey] = [];
 
-        if(d.all === loggedInUser.name) dateGroups[dateKey].push('行政值勤');
-        if(d.director === loggedInUser.name) dateGroups[dateKey].push('主管值勤');
-        if(d.academic === loggedInUser.name || d.student === loggedInUser.name || d.general === loggedInUser.name || d.counseling === loggedInUser.name) {
-          if(!dateGroups[dateKey].includes('處室值勤')) dateGroups[dateKey].push('處室值勤');
-        }
-      });
+        // 💡 全面修正為模糊比對，包含多人時也能正確列出
+    if(d.all && d.all.includes(loggedInUser.name)) dateGroups[dateKey].push('行政值勤');
+    if(d.director && d.director.includes(loggedInUser.name)) dateGroups[dateKey].push('主管值勤');
+    if(
+      (d.academic && d.academic.includes(loggedInUser.name)) || 
+      (d.student && d.student.includes(loggedInUser.name)) || 
+      (d.general && d.general.includes(loggedInUser.name)) || 
+      (d.counseling && d.counseling.includes(loggedInUser.name))
+    ) {
+      if(!dateGroups[dateKey].includes('處室值勤')) dateGroups[dateKey].push('處室值勤');
+    }
+  });
 
       let userDuties = [];
       Object.keys(dateGroups).forEach(dateKey => {
