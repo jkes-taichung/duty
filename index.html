@@ -1370,8 +1370,17 @@ function updateMonthlyDutyCount() {
           payload.adminTitle = userObj ? ((new Date(selectedDateStr).getMonth() === 7) ? userObj.title8 : userObj.title) : "";
         }
 
-        // 💡 提醒：這裡維持你原本的邏輯，若指派行政值勤，會重置處室值勤。若未來需保留其他處室，可修改此段。
-        payload.academic = ""; payload.student = ""; payload.general = ""; payload.counseling = "";
+        // ✨【修正處】移除原本一律清空所有處室的代碼：payload.academic = ""; payload.student = ""; ...
+        // 改為：只找出「上一次的行政值勤人員」並將其從舊格子移出，不破壞其他處室自填的資料
+        let oldAdminVal = previousInputs.inputAdminUser;
+        if (oldAdminVal) {
+          if (payload.academic === oldAdminVal) payload.academic = "";
+          if (payload.student === oldAdminVal) payload.student = "";
+          if (payload.general === oldAdminVal) payload.general = "";
+          if (payload.counseling === oldAdminVal) payload.counseling = "";
+        }
+
+        // 指派新的行政值勤人員到指定處室
         if(adminVal) {
           if (selectedAdminDept === '教務處') payload.academic = adminVal;
           if (selectedAdminDept === '學務處') payload.student = adminVal;
@@ -1392,6 +1401,7 @@ function updateMonthlyDutyCount() {
           payload.directorTitle = userObj ? ((new Date(selectedDateStr).getMonth() === 7) ? userObj.title8 : userObj.title) : "";
         }
       }
+      
       if(loggedInUser.level == 1 || loggedInUser.level == 2) {
         let officeVal = document.getElementById('inputOfficeUser').value.trim();
         let deptKey = 'academic';
@@ -1413,7 +1423,6 @@ function updateMonthlyDutyCount() {
         renderPersonalReport(); 
       }
     }
-
     function renderPersonalReport() {
       const area = document.getElementById('personalReportArea');
       const listContainer = document.getElementById('reportList');
